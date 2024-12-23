@@ -1,0 +1,15 @@
+# Dependency directories
+node_modules/
+
+# Build directories
+build/
+dist/
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+
+# Testing
+coverage/

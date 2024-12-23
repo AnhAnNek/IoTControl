@@ -1,0 +1,15 @@
+# Arduino files
+*.bin
+*.elf
+*.hex
+*.eep
+*.o
+*.d
+*.out
+*.bak
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
