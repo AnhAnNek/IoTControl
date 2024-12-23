@@ -1,5 +1,6 @@
 package com.example.iot_web_server.ws;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.CloseStatus;
@@ -26,14 +27,23 @@ public class WSController extends TextWebSocketHandler {
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         System.out.println("Received: " + message.getPayload());
 
-        // Xử lý dữ liệu từ ESP32
-        if (message.getPayload().startsWith("{")) {
-            System.out.println("Data: " + message.getPayload());
-        }
+        // Parse and process JSON payload
+        try {
+            if (message.getPayload().startsWith("{")) {
+                String receivedMsg = message.getPayload();
+                Map<String, Object> data = new ObjectMapper().readValue(receivedMsg, HashMap.class);
+                System.out.println("Parsed Data: " + data);
 
-        // Gửi lệnh thay đổi tốc độ quạt
-        if (message.getPayload().contains("SET_SPEED")) {
-            session.sendMessage(new TextMessage("SET_SPEED:128"));
+                // Example: Adjust fan speed dynamically based on input
+                String type = data.get("type").toString();
+
+                if (type.equals("INFO")) {
+                    broadcastToAll(receivedMsg);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error processing message: " + e.getMessage());
+            session.sendMessage(new TextMessage("ERROR: Invalid message format"));
         }
     }
 
@@ -42,4 +52,19 @@ public class WSController extends TextWebSocketHandler {
         clients.remove(session);
         System.out.println("Client disconnected: " + session.getId());
     }
+
+    private void broadcastToAll(String message) {
+        synchronized (clients) {
+            for (WebSocketSession session : clients.keySet()) {
+                if (session.isOpen()) {
+                    try {
+                        session.sendMessage(new TextMessage(message));
+                    } catch (Exception e) {
+                        System.err.println("Error broadcasting message: " + e.getMessage());
+                    }
+                }
+            }
+        }
+    }
+
 }

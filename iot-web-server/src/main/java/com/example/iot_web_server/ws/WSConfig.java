@@ -13,7 +13,8 @@ public class WSConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry webSocketHandlerRegistry) {
-        webSocketHandlerRegistry.addHandler(myHandler(), "/ws");
+        webSocketHandlerRegistry.addHandler(myHandler(), "/ws")
+                .setAllowedOrigins("*");
     }
 
     @Bean

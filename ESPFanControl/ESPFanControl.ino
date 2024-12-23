@@ -11,121 +11,176 @@
 
 #include <ArduinoWebsockets.h>
 #include <WiFi.h>
+
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <ArduinoJson.h>
 
-using namespace websockets;
-
-// Pin configuration
+// Pin Configuration
 #define TEMP_PIN 26      // DS18B20 DATA pin
-#define FAN_PWM_PIN 25   // MOS IRF520N PWM pin
+#define FAN_PWM_PIN 16   // GPIO for fan speed control (L298N ENA or IRF520N G)
+#define PHOTORESISTOR_PIN 17
 
-// Wi-Fi credentials
-const char* ssid = "Anh An";
-const char* password = "qwertyuiop";
-
-// WebSocket server configuration
-const char* websockets_server = "192.168.31.100:8000"; // Server address and port
-
-// WebSocket client
-WebsocketsClient client;
-
-// Temperature sensor library
+// DS18B20 Setup
 OneWire oneWire(TEMP_PIN);
 DallasTemperature sensors(&oneWire);
 
-// Global variables
+const char* ssid = "Anh An"; //Enter SSID
+const char* password = "qwertyuiop"; //Enter Password
+const char* websockets_server_host = "192.168.31.2"; //Enter server adress
+const uint16_t websockets_server_port = 8000; // Enter server port
+
+// WebSocket Setup
+using namespace websockets;
+WebsocketsClient client;
+
+// Global Variables
 float currentTemp = 0.0;
-int fanSpeed = 0; // Value range: 0-255
-
-// Function to read temperature
-void readTemperature() {
-    sensors.requestTemperatures();
-    currentTemp = sensors.getTempCByIndex(0);
-}
-
-// WebSocket message handler
-void onMessageCallback(WebsocketsMessage message) {
-    String msg = message.data();
-    Serial.println("Received: " + msg);
-
-    // Check and handle fan speed control command
-    if (msg.startsWith("SET_SPEED:")) {
-        fanSpeed = msg.substring(10).toInt();
-        ledcWrite(0, fanSpeed);
-        Serial.println("Fan Speed Set To: " + String(fanSpeed));
-    }
-}
-
-// WebSocket event handler
-void onEventsCallback(WebsocketsEvent event, String data) {
-    if (event == WebsocketsEvent::ConnectionOpened) {
-        Serial.println("WebSocket Connection Opened");
-    } else if (event == WebsocketsEvent::ConnectionClosed) {
-        Serial.println("WebSocket Connection Closed");
-    } else if (event == WebsocketsEvent::GotPing) {
-        Serial.println("Got a Ping!");
-    } else if (event == WebsocketsEvent::GotPong) {
-        Serial.println("Got a Pong!");
-    }
-}
+int fanSpeed = 0; // PWM value (0-255)
+const char* websocketServer = "192.168.31.2"; // Replace with your WebSocket server's IP or hostname
+const int websocketPort = 8000;                // Replace with your WebSocket server's port
+const char* websocketPath = "/ws";            // Replace with your WebSocket server's path
 
 void setup() {
-    // Initialize Serial
-    Serial.begin(115200);
+  Serial.begin(115200);
 
-    // Start the temperature sensor
-    sensors.begin();
+  // Connect to wifi
+  WiFi.begin(ssid, password);
 
-    // Configure PWM for fan control
-    ledcSetup(0, 25000, 8); // Channel 0, 25kHz frequency, 8-bit resolution
-    ledcAttachPin(FAN_PWM_PIN, 0); // Attach FAN_PWM_PIN to channel 0
+  // Wait some time to connect to wifi
+  for(int i = 0; i < 10 && WiFi.status() != WL_CONNECTED; i++) {
+      Serial.print(".");
+      delay(1000);
+  }
 
-    // Connect to Wi-Fi
-    WiFi.begin(ssid, password);
+  // Check if connected to wifi
+  if(WiFi.status() != WL_CONNECTED) {
+      Serial.println("No Wifi!");
+      return;
+  }
 
-    // Wait for Wi-Fi connection
-    Serial.print("Connecting to Wi-Fi");
-    while (WiFi.status() != WL_CONNECTED) {
-        Serial.print(".");
-        delay(1000);
-    }
-    Serial.println("\nWi-Fi connected. IP address: " + WiFi.localIP().toString());
+  // Print IP address when connected
+  Serial.println("\nWi-Fi connected!");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
 
-    // Setup WebSocket callbacks
-    client.onMessage(onMessageCallback);
-    client.onEvent(onEventsCallback);
+  // Try to connect to WebSocket server
+  Serial.print("Connecting to WebSocket server...");
+  bool connected = client.connect(websockets_server_host, websockets_server_port, "/ws");
+  if (connected) {
+    Serial.println("Connected to WebSocket server!");
+    client.send("Hello Server");
+  } else {
+    Serial.println("Failed to connect to WebSocket server!");
+  }
+  
+  // run callback when messages are received
+  client.onMessage([&](WebsocketsMessage message){
+      Serial.print("Got Message: ");
+      Serial.println(message.data());
+      handleServerMessage(message.data().c_str());
+  });
 
-    // Connect to the WebSocket server
-    if (client.connect(websockets_server)) {
-        Serial.println("Connected to WebSocket server");
-    } else {
-        Serial.println("Failed to connect to WebSocket server");
-    }
+  // Start the temperature sensor
+  sensors.begin();
+  Serial.println("Temperature-based Fan Control with WebSocket");
+
+  // Initialize the FAN_PWM_PIN as output
+  pinMode(FAN_PWM_PIN, OUTPUT);
+  pinMode(PHOTORESISTOR_PIN, OUTPUT);
 }
 
 void loop() {
-    // Read temperature
-    readTemperature();
+  // let the websockets client check for incoming messages
+  if(client.available()) {
+      client.poll();
+  }
 
-    // Create JSON object
-    StaticJsonDocument<200> jsonDoc;
-    jsonDoc["temperature"] = currentTemp;
-    jsonDoc["fanSpeed"] = map(fanSpeed, 0, 255, 0, 100); // Convert fan speed to percentage
+  // Read temperature
+  sensors.requestTemperatures();
+  currentTemp = sensors.getTempCByIndex(0);
 
-    // Serialize JSON to a string
-    String jsonString;
-    serializeJson(jsonDoc, jsonString);
+  if (currentTemp == DEVICE_DISCONNECTED_C) {
+    Serial.println("Error: Could not read temperature!");
+    return;
+  }
 
-    // Send JSON data to the WebSocket server
-    if (client.available()) {
-        client.send(jsonString);
+  // Map temperature to fan speed (example: 30°C = 50%, 60°C = 100%)
+  if (currentTemp < 28) {
+    fanSpeed = 0; // Turn off fan
+  } else if (currentTemp > 28 && currentTemp <= 32) {
+    fanSpeed = map(currentTemp, 30, 60, 128, 255); // Gradual increase
+  } else {
+    fanSpeed = 255; // Full speed
+  }
+
+  // Apply PWM to fan
+  analogWrite(FAN_PWM_PIN, fanSpeed);
+
+  // Debug output
+  Serial.print("Temperature: ");
+  Serial.print(currentTemp);
+  Serial.print(" °C, Fan Speed: ");
+  Serial.println(map(fanSpeed, 0, 255, 0, 100)); // Display fan speed as percentage
+
+  // Send data to WebSocket server in JSON format
+  sendToWebSocket(currentTemp, fanSpeed);
+
+  delay(1000); // Update every second
+}
+
+// Function to handle received messages
+void handleServerMessage(const char* message) {
+  StaticJsonDocument<128> jsonDoc;
+
+  // Deserialize JSON
+  DeserializationError error = deserializeJson(jsonDoc, message);
+  if (error) {
+    Serial.println("Error parsing JSON message");
+    return;
+  }
+
+  // Example: Process fan speed command
+  if (jsonDoc.containsKey("setFanSpeed")) {
+    int newSpeed = jsonDoc["setFanSpeed"];
+    Serial.print("Setting new fan speed to: ");
+    Serial.println(newSpeed);
+
+    // Update fan speed based on the server command
+    analogWrite(FAN_PWM_PIN, map(newSpeed, 0, 100, 0, 255));
+  }
+}
+
+// Function to send JSON data to WebSocket server
+void sendToWebSocket(float temp, int fanSpeed) {
+  // Check if client is connected
+  if (!client.available()) {
+    Serial.println("WebSocket client not available, attempting to reconnect...");
+
+    // Try reconnecting to the WebSocket server
+    if (client.connect(websockets_server_host, websockets_server_port, "/ws")) {
+      Serial.println("Reconnected to WebSocket server!");
+      client.send("Reconnected: Hello Server");
+    } else {
+      Serial.println("Failed to reconnect to WebSocket server.");
+      return; // Exit function if reconnect fails
     }
+  }
 
-    // Maintain WebSocket connection
-    client.poll();
+  // Create JSON object
+  StaticJsonDocument<128> jsonDoc;
+  jsonDoc["type"] = "INFO";
+  jsonDoc["temp"] = temp;
+  jsonDoc["fanSpeed"] = map(fanSpeed, 0, 255, 0, 100); // Convert to percentage
 
-    // Wait before the next update
-    delay(1000);
+  // Serialize JSON to string
+  String jsonString;
+  serializeJson(jsonDoc, jsonString);
+
+  // Send JSON data to the WebSocket server
+  client.send(jsonString);
+
+  // Debug output
+  Serial.print("Sent to WebSocket: ");
+  Serial.println(jsonString);
 }
