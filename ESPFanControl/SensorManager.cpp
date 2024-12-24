@@ -1,42 +1,40 @@
 #include "SensorManager.h"
-#include <OneWire.h>
-#include <DallasTemperature.h>
 
-// Pin Configuration
-#define TEMP_PIN 26 // DS18B20 DATA pin
-#define PHOTORESISTOR_PIN 17  
-#define INFRARED_SENSOR_PIN 19
-#define SOUND_SENSOR_PIN 18
+// Constructor
+SensorManager::SensorManager(int tempPin, int photoresistorPin, int infraredPin, int soundPin)
+    : tempPin(tempPin),
+      photoresistorPin(photoresistorPin),
+      infraredPin(infraredPin),
+      soundPin(soundPin),
+      oneWire(tempPin),
+      sensors(&oneWire) {}
 
-// DS18B20 Setup
-OneWire oneWire(TEMP_PIN);
-DallasTemperature sensors(&oneWire);
-
-void initializeSensors() {
+// Initialize sensors
+void SensorManager::initializeSensors() {
   sensors.begin();
   
-  pinMode(PHOTORESISTOR_PIN, OUTPUT);
-  pinMode(INFRARED_SENSOR_PIN, OUTPUT);
-  pinMode(SOUND_SENSOR_PIN, OUTPUT);
+  pinMode(photoresistorPin, INPUT);
+  pinMode(infraredPin, INPUT);
+  pinMode(soundPin, INPUT);
 }
 
-float getTemperature() {
+// Get temperature from DS18B20
+float SensorManager::getTemperature() {
   sensors.requestTemperatures();
-  float temp = sensors.getTempCByIndex(0);
-  return temp;
+  return sensors.getTempCByIndex(0);
 }
 
-int readPhotoresistor() {
-  int value = analogRead(PHOTORESISTOR_PIN);
-  return value;
+// Read photoresistor value
+int SensorManager::readPhotoresistor() {
+  return analogRead(photoresistorPin);
 }
 
-int readInfraredSensor() {
-  int value = analogRead(INFRARED_SENSOR_PIN);
-  return value;
+// Read infrared sensor value
+int SensorManager::readInfraredSensor() {
+  return analogRead(infraredPin);
 }
 
-int readSoundSensor() {
-  int value = analogRead(SOUND_SENSOR_PIN);
-  return value;
+// Read sound sensor value
+int SensorManager::readSoundSensor() {
+  return analogRead(soundPin);
 }

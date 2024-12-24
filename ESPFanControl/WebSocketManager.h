@@ -3,20 +3,44 @@
 
 #include <ArduinoWebsockets.h>
 #include <ArduinoJson.h>
-#include "FanController.h"
 #include <WiFi.h>
-#include <Constants.h>
-#include "Configuration.h"
-#include "Utils.h"
+#include <functional> // For std::function
 
-// WebSocket configuration
-extern const char* websockets_server_host;
-extern const uint16_t websockets_server_port;
-extern websockets::WebsocketsClient client;
+class WebSocketManager {
+public:
+  // Get the singleton instance
+  static WebSocketManager& getInstance();
 
-void initializeWebSocket();
-void handleWebSocketMessages();
-void handleServerMessage(const char* message);
-void sendToWebSocket(float temp, int fanSpeed);
+  // Delete copy constructor and assignment operator to enforce singleton
+  WebSocketManager(const WebSocketManager&) = delete;
+  WebSocketManager& operator=(const WebSocketManager&) = delete;
+
+  // Initialize WebSocket connection
+  void initialize(const char* serverHost, uint16_t serverPort);
+
+  // Handle incoming WebSocket messages
+  void handleMessages();
+
+  // Send data to WebSocket server
+  void sendData(float temp, int fanSpeed);
+
+  // Set the callback for received messages
+  void setOnReceivedMessageCallback(std::function<void(const char*)> callback);
+
+private:
+  // Private constructor for singleton
+  WebSocketManager();
+
+  // WebSocket configuration
+  const char* serverHost;
+  uint16_t serverPort;
+  websockets::WebsocketsClient client;
+
+  // Callback for received messages
+  std::function<void(const char*)> onReceivedMessageCallback;
+
+  // Internal function to handle a single WebSocket message
+  void handleMessage(const char* message);
+};
 
 #endif

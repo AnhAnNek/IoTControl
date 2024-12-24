@@ -4,10 +4,30 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-void initializeSensors();
-float getTemperature();
-int readPhotoresistor();
-int readInfraredSensor();
-int readSoundSensor();
+class SensorManager {
+public:
+  // Constructor
+  SensorManager(int tempPin, int photoresistorPin, int infraredPin, int soundPin);
+
+  // Initialize sensors
+  void initializeSensors();
+
+  // Get sensor readings
+  float getTemperature();
+  int readPhotoresistor();
+  int readInfraredSensor();
+  int readSoundSensor();
+
+private:
+  // Pin configurations
+  int tempPin;
+  int photoresistorPin;
+  int infraredPin;
+  int soundPin;
+
+  // DS18B20 sensor
+  OneWire oneWire;
+  DallasTemperature sensors;
+};
 
 #endif
