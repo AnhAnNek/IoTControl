@@ -5,6 +5,9 @@
 #include <ArduinoJson.h>
 #include "FanController.h"
 #include <WiFi.h>
+#include <Constants.h>
+#include "Configuration.h"
+#include "Utils.h"
 
 // WebSocket configuration
 extern const char* websockets_server_host;

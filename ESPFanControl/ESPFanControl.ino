@@ -5,30 +5,48 @@
 #include "FanController.h"
 #include "WebSocketManager.h"
 #include "WiFiManager.h"
-
-// Pin Configuration
-#define PHOTORESISTOR_PIN 17
+#include "Configuration.h"
 
 // Global Variables
 float currentTemp = 0.0;
 int fanSpeed = 0; // PWM value (0-255)
 
+float minTemp = 28;  // Minimum temperature for fan to start
+float maxTemp = 32;  // Maximum temperature for full fan speed
+int minFanSpeed = 0; // Minimum fan speed (PWM value)
+int maxFanSpeed = 255; // Maximum fan speed (PWM value)
+
 void setup() {
   Serial.begin(115200);
 
   // Initialize Wi-Fi
-  initializeWiFi();
+  WiFiManager& wifiManager = WiFiManager::getInstance();
+  wifiManager.initializeWiFi("Anh An", "qwertyuiop");
 
   // Initialize peripherals
   initializeSensors();
   initializeFan();
   initializeWebSocket();
-  pinMode(PHOTORESISTOR_PIN, OUTPUT);
 }
 
 void loop() {
   // Check for WebSocket messages
   handleWebSocketMessages();
+  
+  // Read photoresistor value
+  int lightLevel = readPhotoresistor();
+  Serial.print("Photoresistor Value: ");
+  Serial.println(lightLevel);
+
+  // Read Infrared sensor value
+  int infraredValue = readInfraredSensor();
+  Serial.print("Infrared sensor Value: ");
+  Serial.println(infraredValue);
+
+  // Read Sound sensor value
+  int soundValue = readSoundSensor();
+  Serial.print("Sound sensor Value: ");
+  Serial.println(soundValue);
 
   // Read temperature
   currentTemp = getTemperature();
@@ -37,13 +55,12 @@ void loop() {
     return;
   }
 
-  // Map temperature to fan speed (example: 30°C = 50%, 60°C = 100%)
-  if (currentTemp < 28) {
-    fanSpeed = 0; // Turn off fan
-  } else if (currentTemp > 28 && currentTemp <= 32) {
-    fanSpeed = map(currentTemp, 30, 60, 128, 255); // Gradual increase
+  if (currentTemp < minTemp) {
+    fanSpeed = minFanSpeed; // Turn off fan
+  } else if (currentTemp >= minTemp && currentTemp <= maxTemp) {
+    fanSpeed = map(currentTemp, minTemp, maxTemp, minFanSpeed, maxFanSpeed);
   } else {
-    fanSpeed = 255; // Full speed
+    fanSpeed = maxFanSpeed; // Full speed
   }
 
   // Set fan speed

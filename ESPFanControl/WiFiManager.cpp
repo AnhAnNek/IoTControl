@@ -1,21 +1,19 @@
 #include "WiFiManager.h"
-#include <WiFi.h>
-#include <WiFiAP.h>
-#include <WiFiClient.h>
-#include <WiFiGeneric.h>
-#include <WiFiMulti.h>
-#include <WiFiSTA.h>
-#include <WiFiScan.h>
-#include <WiFiServer.h>
-#include <WiFiType.h>
-#include <WiFiUdp.h>
 
-// Wi-Fi credentials
-const char* ssid = "Anh An"; // Replace with your SSID
-const char* password = "qwertyuiop"; // Replace with your password
+// Initialize static instance
+WiFiManager& WiFiManager::getInstance() {
+  static WiFiManager instance;
+  return instance;
+}
 
-// Function to initialize Wi-Fi connection
-void initializeWiFi() {
+// Private constructor
+WiFiManager::WiFiManager() : ssid(nullptr), password(nullptr) {}
+
+// Initialize Wi-Fi connection
+void WiFiManager::initializeWiFi(const char* ssid, const char* password) {
+  this->ssid = ssid;
+  this->password = password;
+
   Serial.print("Connecting to Wi-Fi");
   WiFi.begin(ssid, password);
 
@@ -33,4 +31,9 @@ void initializeWiFi() {
   } else {
     Serial.println("\nFailed to connect to Wi-Fi.");
   }
+}
+
+// Get the Wi-Fi connection status
+bool WiFiManager::isConnected() const {
+  return WiFi.status() == WL_CONNECTED;
 }

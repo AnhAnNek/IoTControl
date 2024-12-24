@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
-import FanControl from "./Pages/FanControl";
-import FanMonitor from "./Pages/FanMonitor";
+import FanControl from "./Components/FanControl";
+import FanMonitor from "./Components/FanMonitor";
 import {
   AppBar,
   Box,
@@ -14,6 +14,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
+import TemperatureSetting from "./Components/TemperatureSetting";
 
 const drawerWidth = 240;
 
@@ -68,6 +69,11 @@ function App() {
                 <ListItemText primary="Fan Monitor" />
               </ListItemButton>
             </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleTabChange("TemperatureSettings")}>
+                <ListItemText primary="Temperature Settings" />
+              </ListItemButton>
+            </ListItem>
           </List>
         </Box>
       </Drawer>
@@ -79,12 +85,12 @@ function App() {
           flexGrow: 1,
           bgcolor: "background.default",
           p: 3,
-          ml: `${drawerWidth}px`,
         }}
       >
         <Toolbar />
         {selectedTab === "FanControl" && <FanControl />}
         {selectedTab === "FanMonitor" && <FanMonitor />}
+        {selectedTab === "TemperatureSettings" && <TemperatureSetting />}
       </Box>
     </Box>
   );

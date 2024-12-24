@@ -2,20 +2,30 @@
 #define WIFI_MANAGER_H
 
 #include <WiFi.h>
-#include <WiFiAP.h>
-#include <WiFiClient.h>
-#include <WiFiGeneric.h>
-#include <WiFiMulti.h>
-#include <WiFiSTA.h>
-#include <WiFiScan.h>
-#include <WiFiServer.h>
-#include <WiFiType.h>
-#include <WiFiUdp.h>
+#include <Arduino.h>
 
-// Wi-Fi credentials
-extern const char* ssid;
-extern const char* password;
+class WiFiManager {
+public:
+  // Get the singleton instance
+  static WiFiManager& getInstance();
 
-void initializeWiFi();
+  // Delete copy constructor and assignment operator to enforce singleton
+  WiFiManager(const WiFiManager&) = delete;
+  WiFiManager& operator=(const WiFiManager&) = delete;
+
+  // Initialize Wi-Fi connection
+  void initializeWiFi(const char* ssid, const char* password);
+
+  // Get the Wi-Fi connection status
+  bool isConnected() const;
+
+private:
+  // Private constructor for singleton
+  WiFiManager();
+
+  // Wi-Fi credentials
+  const char* ssid;
+  const char* password;
+};
 
 #endif
