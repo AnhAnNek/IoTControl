@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Typography, Grid } from "@mui/material";
+import { useWebSocket } from "../Providers/WebSocketProvider";
 
-const TemperatureSetting = ({ wsUrl }) => {
-  const [minTemp, setMinTemp] = useState(28);
-  const [maxTemp, setMaxTemp] = useState(60);
+const TemperatureSetting = () => {
+  const [minTemp, setMinTemp] = useState(25);
+  const [maxTemp, setMaxTemp] = useState(35);
   const [minFanSpeed, setMinFanSpeed] = useState(0);
   const [maxFanSpeed, setMaxFanSpeed] = useState(255);
   const [status, setStatus] = useState("");
+  const { sendMessage } = useWebSocket();
 
-  const sendSettings = () => {
-    // Create the settings object
+  const handleSendSettings = () => {
     const settings = {
       type: "SETTING_TEMP",
       minTemp: parseFloat(minTemp),
@@ -18,18 +19,12 @@ const TemperatureSetting = ({ wsUrl }) => {
       maxFanSpeed: parseInt(maxFanSpeed, 10),
     };
 
-    // Establish WebSocket connection
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      ws.send(JSON.stringify(settings));
+    try {
+      sendMessage(JSON.stringify(settings));
       setStatus("Settings sent successfully!");
-      ws.close();
-    };
-
-    ws.onerror = () => {
+    } catch (error) {
       setStatus("Failed to send settings. Please try again.");
-    };
+    }
   };
 
   return (
@@ -82,7 +77,7 @@ const TemperatureSetting = ({ wsUrl }) => {
       <Button
         variant="contained"
         color="primary"
-        onClick={sendSettings}
+        onClick={handleSendSettings}
         sx={{ marginTop: "20px" }}
       >
         Send Settings

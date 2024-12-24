@@ -1,51 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  Typography,
-  Box,
-  Button,
-  TextField,
-  Paper,
-} from "@mui/material";
+import React, { useState } from "react";
+import { Typography, Box, Button, TextField, Paper } from "@mui/material";
+import { useWebSocket } from "../Providers/WebSocketProvider";
 
 const FanControl = () => {
-  const [messageToSend, setMessageToSend] = useState(""); // Message input state
-  const [receivedMessages, setReceivedMessages] = useState([]); // Array for received messages
-  const socketRef = useRef(null);
+  const [messageToSend, setMessageToSend] = useState("");
+  const { sendMessage, receivedMessages } = useWebSocket();
 
-  useEffect(() => {
-    // Connect to WebSocket server
-    const socket = new WebSocket("ws://127.0.0.1:8000/ws"); // Update with your server's address
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("WebSocket connection established.");
-      addReceivedMessage("WebSocket connection established.");
-    };
-
-    socket.onmessage = (event) => {
-      console.log("Received from server:", event.data);
-      addReceivedMessage(event.data); // Add received message to the array
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket connection closed.");
-      addReceivedMessage("WebSocket connection closed.");
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
-  const addReceivedMessage = (message) => {
-    setReceivedMessages((prevMessages) => [...prevMessages, message]);
-  };
-
-  const sendMessage = () => {
-    if (socketRef.current && messageToSend) {
-      socketRef.current.send(messageToSend);
+  const handleSendMessage = () => {
+    if (messageToSend) {
+      sendMessage(messageToSend);
       setMessageToSend(""); // Clear input field
-      console.log("Sent to server:", messageToSend);
     }
   };
 
@@ -55,7 +19,6 @@ const FanControl = () => {
         Fan Control Dashboard
       </Typography>
 
-      {/* Message Input and Buttons */}
       <Box
         sx={{
           marginTop: "20px",
@@ -75,7 +38,7 @@ const FanControl = () => {
           value={messageToSend}
           onChange={(e) => setMessageToSend(e.target.value)}
         />
-        <Button variant="contained" color="primary" onClick={sendMessage}>
+        <Button variant="contained" color="primary" onClick={handleSendMessage}>
           Send
         </Button>
 

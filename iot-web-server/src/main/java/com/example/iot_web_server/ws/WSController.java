@@ -1,6 +1,10 @@
 package com.example.iot_web_server.ws;
 
+import com.example.iot_web_server.message.service.MessageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.CloseStatus;
@@ -15,34 +19,41 @@ import java.util.Map;
 @RequestMapping("/ws")
 public class WSController extends TextWebSocketHandler {
 
+    private static final Logger log = LogManager.getLogger(WSController.class);
     private Map<WebSocketSession, String> clients = new HashMap<>();
+
+    @Autowired
+    private MessageService messageService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         clients.put(session, "Connected");
-        System.out.println("Client connected: " + session.getId());
+        log.info("Client connected: " + session.getId());
     }
 
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        System.out.println("Received: " + message.getPayload());
+        log.info("Received: " + message.getPayload());
 
         // Parse and process JSON payload
         try {
             if (message.getPayload().startsWith("{")) {
                 String receivedMsg = message.getPayload();
                 Map<String, Object> data = new ObjectMapper().readValue(receivedMsg, HashMap.class);
-                System.out.println("Parsed Data: " + data);
+                log.info("Parsed Data: " + data);
 
                 // Example: Adjust fan speed dynamically based on input
                 String type = data.get("type").toString();
 
                 if (type.equals("INFO")) {
+                    // Save asynchronously
+                    messageService.saveMessageAsync(type, receivedMsg);
+
                     broadcastToAll(receivedMsg);
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error processing message: " + e.getMessage());
+            log.error("Error processing message: ", e);
             session.sendMessage(new TextMessage("ERROR: Invalid message format"));
         }
     }
@@ -50,7 +61,7 @@ public class WSController extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         clients.remove(session);
-        System.out.println("Client disconnected: " + session.getId());
+        log.info("Client disconnected: " + session.getId());
     }
 
     private void broadcastToAll(String message) {
@@ -60,7 +71,7 @@ public class WSController extends TextWebSocketHandler {
                     try {
                         session.sendMessage(new TextMessage(message));
                     } catch (Exception e) {
-                        System.err.println("Error broadcasting message: " + e.getMessage());
+                        log.error("Error broadcasting message: ", e);
                     }
                 }
             }

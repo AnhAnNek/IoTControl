@@ -21,5 +21,4 @@ public class WSConfig implements WebSocketConfigurer {
     public WebSocketHandler myHandler() {
         return new WSController();
     }
-
 }

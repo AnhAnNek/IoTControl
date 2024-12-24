@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  iot-web-server:
+    image: vananne/iot-web-server:1.0
+    container_name: iot-web-server
+    ports:
+      - "8000:8000" # Expose port 8000
+    environment:
+      - PRO_SERVER_PORT=8000
+      - PROD_DB_URL=192.168.31.90:5432/IoTControl
+      - PROD_DB_USER=root
+      - PROD_DB_PASSWORD=root
+    networks:
+      - iot-network
+
+  iot-web-ui:
+    image: vananne/iot-web-ui:1.0
+    container_name: iot-web-ui
+    ports:
+      - "3000:3000" # Frontend runs on port 3000
+    environment:
+      - REACT_APP_WEBSOCKET_URL=ws://192.168.31.90:8000/ws
+    networks:
+      - iot-network
+
+networks:
+  iot-network:
+    driver: bridge

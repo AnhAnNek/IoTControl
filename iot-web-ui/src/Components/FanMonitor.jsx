@@ -17,6 +17,7 @@ import {
   Box,
   CircularProgress,
 } from "@mui/material";
+import {WEBSOCKET_URL} from "../Utils/constants";
 
 // Register required Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
@@ -29,7 +30,7 @@ const FanMonitor = () => {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    const socket = new WebSocket("ws://127.0.0.1:8000/ws"); // Update with your server's address
+    const socket = new WebSocket(WEBSOCKET_URL); // Update with your server's address
     socketRef.current = socket;
 
     socket.onopen = () => {
