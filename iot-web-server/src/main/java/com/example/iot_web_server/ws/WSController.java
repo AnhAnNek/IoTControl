@@ -51,6 +51,22 @@ public class WSController extends TextWebSocketHandler {
 
                     broadcastToAll(receivedMsg);
                 }
+
+                if (type.equals("INFO_RELAYS")) {
+                    broadcastToAll(receivedMsg);
+                }
+
+                if (type.equals("COMMAND_TURN_ON_RELAY")) {
+                    broadcastToAll(receivedMsg);
+                }
+
+                if (type.equals("COMMAND_TURN_OFF_RELAY")) {
+                    broadcastToAll(receivedMsg);
+                }
+
+                if (type.equals("COMMAND_SET_RELAY_TEMP")) {
+                    broadcastToAll(receivedMsg);
+                }
             }
         } catch (Exception e) {
             log.error("Error processing message: ", e);

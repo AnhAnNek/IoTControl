@@ -1,8 +1,10 @@
 #include "RelayControl.h"
 
 // Constructor
-RelayControl::RelayControl(uint8_t relayPin, bool activeState)
-    : _relayPin(relayPin), _activeState(activeState), _currentState(!activeState), _isAutoMode(false), _settingTemp(0.0), _delayTemp(0.0) {}
+RelayControl::RelayControl(uint8_t relayPin, const char* name, bool activeState)
+    : _relayPin(relayPin), _name(name), _activeState(activeState), 
+      _currentState(!activeState), _isAutoMode(false), 
+      _tempToRun(0.0), _tempToStop(0.0) {}
 
 // Initialize the relay pin
 void RelayControl::begin() {
@@ -11,21 +13,21 @@ void RelayControl::begin() {
 }
 
 // Set auto mode and thresholds
-void RelayControl::setAutoMode(bool isAutoMode, float settingTemp, float delayTemp) {
+void RelayControl::setAutoMode(bool isAutoMode, float tempToRun, float tempToStop) {
     _isAutoMode = isAutoMode;
     if (_isAutoMode) {
-        _settingTemp = settingTemp;
-        _delayTemp = delayTemp;
+        _tempToRun = tempToRun;
+        _tempToStop = tempToStop;
     }
 }
 
 // Update the relay state based on temperature
 void RelayControl::update(float currentTemp) {
     if (_isAutoMode) {
-        if (currentTemp >= _settingTemp + _delayTemp) {
+        if (currentTemp >= _tempToRun) {
             digitalWrite(_relayPin, _activeState); // Turn on relay
             _currentState = true;
-        } else if (currentTemp < _settingTemp) {
+        } else if (currentTemp < _tempToStop) {
             digitalWrite(_relayPin, !_activeState); // Turn off relay
             _currentState = false;
         }
@@ -50,19 +52,25 @@ void RelayControl::turnOff() {
     _currentState = false;
 }
 
-// Toggle the relay state (manual mode or temporary override)
-void RelayControl::toggle() {
-    if (_isAutoMode) {
-        _isAutoMode = false; // Temporarily disable auto mode
-    }
-    if (_currentState) {
-        turnOff();
-    } else {
-        turnOn();
-    }
-}
-
 // Get the current state of the relay
 bool RelayControl::getState() {
     return _currentState;
+}
+
+// Check if the relay is in auto mode
+bool RelayControl::isAutoMode() {
+    return _isAutoMode;
+}
+
+// Get the name of the relay
+const char* RelayControl::getName() {
+    return _name;
+}
+
+float RelayControl::getTempToRun() {
+    return _tempToRun;
+}
+
+float RelayControl::getTempToStop() {
+    return _tempToStop;
 }

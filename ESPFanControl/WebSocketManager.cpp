@@ -44,8 +44,7 @@ void WebSocketManager::handleMessages() {
   }
 }
 
-// Send data to WebSocket server
-void WebSocketManager::sendData(float temp, int fanSpeed) {
+void WebSocketManager::send(const char* jsonText) {
   if (!client.available()) {
     Serial.println("WebSocket client not available, attempting to reconnect...");
     if (!client.connect(serverHost, serverPort, "/ws")) {
@@ -54,17 +53,10 @@ void WebSocketManager::sendData(float temp, int fanSpeed) {
     }
   }
 
-  StaticJsonDocument<128> jsonDoc;
-  jsonDoc["type"] = "INFO";
-  jsonDoc["temp"] = temp;
-  jsonDoc["fanSpeed"] = map(fanSpeed, 0, 255, 0, 100);
-
-  String jsonString;
-  serializeJson(jsonDoc, jsonString);
-  client.send(jsonString);
+  client.send(jsonText);
 
   Serial.print("Sent to WebSocket: ");
-  Serial.println(jsonString);
+  Serial.println(jsonText);
 }
 
 // Set the callback for received messages

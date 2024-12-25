@@ -21,8 +21,7 @@ public:
   // Handle incoming WebSocket messages
   void handleMessages();
 
-  // Send data to WebSocket server
-  void sendData(float temp, int fanSpeed);
+  void send(const char* jsonText);
 
   // Set the callback for received messages
   void setOnReceivedMessageCallback(std::function<void(const char*)> callback);

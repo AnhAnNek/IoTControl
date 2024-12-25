@@ -11,21 +11,20 @@ constexpr uint16_t WEBSOCKET_SERVER_PORT = 8000;
 
 // Sensor pins
 constexpr int TEMP_SENSOR_PIN = 26;       // DS18B20 DATA pin
-constexpr int PHOTORESISTOR_PIN = 4;     // Photoresistor pin
-constexpr int INFRARED_SENSOR_PIN = 18;  // Infrared sensor pin
-constexpr int SOUND_SENSOR_PIN = 15;     // Sound sensor pin
+constexpr int SOUND_SENSOR_PIN = 16;     // Sound sensor pin
 
-constexpr int DHTPIN = 25;
-constexpr const char* DHTTYPE = "DHT11";  
+constexpr int DHT_PIN = 25;
 
-// Fan control pins
-constexpr int FAN_PWM_PIN = 16;          // PWM pin for fan
-constexpr int FAN_PWM_PIN_1 = 5;         // Secondary PWM pin for fan
+// Relay Pins
+constexpr int RELAY1_PIN = 23;           // Relay 1 pin
+constexpr int RELAY2_PIN = 22;           // Relay 2 pin
+constexpr int RELAY3_PIN = 21;           // Relay 3 pin
+constexpr int RELAY4_PIN = 19;           // Relay 4 pin
 
 // Other constants (add more as needed)
-// Example: Message types
-constexpr const char* MESSAGE_TYPE_COMMAND_FAN = "COMMAND_FAN";
-constexpr const char* MESSAGE_TYPE_SETTING_TEMP = "SETTING_TEMP";
 constexpr const char* MESSAGE_TYPE_INFO = "INFO";
+constexpr const char* COMMAND_TURN_ON_RELAY = "COMMAND_TURN_ON_RELAY";
+constexpr const char* COMMAND_TURN_OFF_RELAY = "COMMAND_TURN_OFF_RELAY";
+constexpr const char* COMMAND_SET_RELAY_TEMP = "COMMAND_SET_RELAY_TEMP";
 
 #endif

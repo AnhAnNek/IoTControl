@@ -59,18 +59,19 @@ function App() {
         <Box sx={{ overflow: "auto" }}>
           <List>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => handleTabChange("ESPControl")}>
+              <ListItemButton
+                onClick={() => handleTabChange("ESPControl")}
+                selected={selectedTab === "ESPControl"}
+              >
                 <ListItemText primary="Main Control" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => handleTabChange("TemperatureMonitor")}>
+              <ListItemButton
+                onClick={() => handleTabChange("TemperatureMonitor")}
+                selected={selectedTab === "TemperatureMonitor"}
+              >
                 <ListItemText primary="Temperature Monitor" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleTabChange("TemperatureSettings")}>
-                <ListItemText primary="Temperature Settings" />
               </ListItemButton>
             </ListItem>
           </List>

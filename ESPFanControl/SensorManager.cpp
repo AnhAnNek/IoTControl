@@ -1,20 +1,24 @@
 #include "SensorManager.h"
+#include <Arduino.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <DHT.h>
+#include <DHT_U.h>
 
 // Constructor
-SensorManager::SensorManager(int tempPin, int photoresistorPin, int infraredPin, int soundPin)
+SensorManager::SensorManager(int tempPin, int soundPin, int dhtPin)
     : tempPin(tempPin),
-      photoresistorPin(photoresistorPin),
-      infraredPin(infraredPin),
       soundPin(soundPin),
+      dhtPin(dhtPin),
       oneWire(tempPin),
-      sensors(&oneWire) {}
+      sensors(&oneWire),
+      dht(dhtPin, DHT11) { // Replace DHT11 with DHT22 if applicable
+}
 
 // Initialize sensors
 void SensorManager::initializeSensors() {
   sensors.begin();
-  
-  pinMode(photoresistorPin, INPUT);
-  pinMode(infraredPin, INPUT);
+  dht.begin();
   pinMode(soundPin, INPUT);
 }
 
@@ -24,17 +28,17 @@ float SensorManager::getTemperature() {
   return sensors.getTempCByIndex(0);
 }
 
-// Read photoresistor value
-int SensorManager::readPhotoresistor() {
-  return analogRead(photoresistorPin);
+// Get temperature from DHT sensor
+float SensorManager::getEnvTemperature() {
+  return dht.readTemperature(); // Returns temperature in Celsius
 }
 
-// Read infrared sensor value
-int SensorManager::readInfraredSensor() {
-  return analogRead(infraredPin);
+// Get humidity from DHT sensor
+float SensorManager::getEnvHumidity() {
+  return dht.readHumidity();
 }
 
 // Read sound sensor value
 int SensorManager::readSoundSensor() {
-  return analogRead(soundPin);
+  return digitalRead(soundPin);
 }
