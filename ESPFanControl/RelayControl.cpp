@@ -25,7 +25,7 @@ void RelayControl::update(float currentTemp) {
         if (currentTemp >= _settingTemp + _delayTemp) {
             digitalWrite(_relayPin, _activeState); // Turn on relay
             _currentState = true;
-        } else {
+        } else if (currentTemp < _settingTemp) {
             digitalWrite(_relayPin, !_activeState); // Turn off relay
             _currentState = false;
         }

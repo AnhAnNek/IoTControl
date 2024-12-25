@@ -32,7 +32,14 @@ export const WebSocketProvider = ({ children }) => {
   }, []);
 
   const addReceivedMessage = (message) => {
-    setReceivedMessages((prev) => [...prev, message]);
+    setReceivedMessages((prev) => {
+      const updatedMessages = [...prev, message];
+      // Keep only the last 500 messages
+      if (updatedMessages.length > 500) {
+        return updatedMessages.slice(-500);
+      }
+      return updatedMessages;
+    });
   };
 
   const sendMessage = (message) => {

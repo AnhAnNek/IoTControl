@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
-import FanControl from "./Components/FanControl";
-import FanMonitor from "./Components/FanMonitor";
+import ESPControl from "./Components/ESPControl";
+import TemperatureMonitor from "./Components/TemperatureMonitor";
 import {
   AppBar,
   Box,
@@ -14,12 +14,11 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import TemperatureSetting from "./Components/TemperatureSetting";
 
-const drawerWidth = 240;
+const drawerWidth = 190;
 
 function App() {
-  const [selectedTab, setSelectedTab] = useState("FanControl");
+  const [selectedTab, setSelectedTab] = useState("ESPControl");
 
   const handleTabChange = (tab) => {
     setSelectedTab(tab);
@@ -60,13 +59,13 @@ function App() {
         <Box sx={{ overflow: "auto" }}>
           <List>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => handleTabChange("FanControl")}>
-                <ListItemText primary="Fan Control" />
+              <ListItemButton onClick={() => handleTabChange("ESPControl")}>
+                <ListItemText primary="Main Control" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => handleTabChange("FanMonitor")}>
-                <ListItemText primary="Fan Monitor" />
+              <ListItemButton onClick={() => handleTabChange("TemperatureMonitor")}>
+                <ListItemText primary="Temperature Monitor" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
@@ -88,9 +87,8 @@ function App() {
         }}
       >
         <Toolbar />
-        {selectedTab === "FanControl" && <FanControl />}
-        {selectedTab === "FanMonitor" && <FanMonitor />}
-        {selectedTab === "TemperatureSettings" && <TemperatureSetting />}
+        {selectedTab === "ESPControl" && <ESPControl />}
+        {selectedTab === "TemperatureMonitor" && <TemperatureMonitor />}
       </Box>
     </Box>
   );

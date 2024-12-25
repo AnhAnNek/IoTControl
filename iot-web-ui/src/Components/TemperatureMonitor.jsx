@@ -22,7 +22,7 @@ import {WEBSOCKET_URL} from "../Utils/constants";
 // Register required Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
-const FanMonitor = () => {
+const TemperatureMonitor = () => {
   const [temperature, setTemperature] = useState(0.0);
   const [fanSpeed, setFanSpeed] = useState(0);
   const [tempHistory, setTempHistory] = useState([]);
@@ -151,4 +151,4 @@ const FanMonitor = () => {
   );
 };
 
-export default FanMonitor;
+export default TemperatureMonitor;

@@ -1,11 +1,9 @@
 #include <Arduino.h>
 #include "SensorManager.h"
-#include "FanController.h"
 #include "WebSocketManager.h"
 #include "WiFiManager.h"
 #include "Constants.h"
 #include "RelayControl.h"
-#include "StompClient.h"
 
 // Global Variables
 float currentTemp = 0.0;
@@ -17,16 +15,12 @@ float maxTemp = 32;  // Maximum temperature for full fan speed
 int minFanSpeed = 0; // Minimum fan speed (PWM value)
 int maxFanSpeed = 255; // Maximum fan speed (PWM value)
 
-// Instantiate SensorManager and FanController
 SensorManager sensorManager(TEMP_SENSOR_PIN, PHOTORESISTOR_PIN, INFRARED_SENSOR_PIN, SOUND_SENSOR_PIN);
-FanController fanController(FAN_PWM_PIN, FAN_PWM_PIN_1);
-RelayControl relay(19, LOW);
 
-// WebSocket server URL
-const char* websocket_server = "ws://192.168.31.2:8001/ws";
-
-// STOMP client
-StompClient stompClient(websocket_server);
+RelayControl relay1(23, LOW);
+RelayControl relay2(21, LOW);
+RelayControl relay3(19, LOW);
+RelayControl relay4(18, LOW);
 
 // Message handlers for specific destinations
 void handleGreetings(const String& message) {
@@ -50,7 +44,7 @@ void customMessageHandler(const char* message) {
       if (type == "COMMAND_FAN") {
         if (jsonDoc.containsKey("fanSpeed")) {
           int newSpeed = jsonDoc["fanSpeed"];
-          fanController.setFanSpeed(map(newSpeed, 0, 100, 0, 255));
+
           Serial.print("Set fan speed to: ");
           Serial.println(newSpeed);
         }
@@ -70,25 +64,21 @@ void initializeSystem() {
   // Initialize sensors
   sensorManager.initializeSensors();
 
-  // Initialize fan controller
-  fanController.initialize();
-
   // Initialize WebSocketManager
   WebSocketManager& webSocketManager = WebSocketManager::getInstance();
   webSocketManager.initialize(WEBSOCKET_SERVER_HOST, WEBSOCKET_SERVER_PORT);
   webSocketManager.setOnReceivedMessageCallback(customMessageHandler);
 
-  relay.begin();
+  relay1.begin();
+  relay2.begin();
+  relay3.begin();
+  relay4.begin();
+  
+  relay1.setAutoMode(true, 22, 4);
+  relay2.setAutoMode(true, 24, 4);
+  relay3.setAutoMode(true, 26, 4);
+  relay4.setAutoMode(true, 28, 4);
   Serial.println("Relay initialized");
-
-  // Connect to the STOMP server
-  if (stompClient.connectToServer()) {
-      stompClient.setMessageHandler();
-
-      // Subscribe to destinations with specific handlers
-      stompClient.subscribe("/topic/greetings", handleGreetings);
-      stompClient.subscribe("/topic/alerts", handleAlerts);
-  }
 }
 
 // Function to run the main system loop
@@ -116,22 +106,14 @@ void runSystem() {
   }
 
   // Calculate fan speed
-  if (currentTemp < minTemp) {
+  if (currentTemp < minTemp) 
+  {
     fanSpeed = minFanSpeed;
-  } else if (currentTemp >= minTemp && currentTemp <= maxTemp) {
-    fanSpeed = map(currentTemp, minTemp, maxTemp, minFanSpeed, maxFanSpeed);
-  } else {
+  } 
+  else 
+  {
     fanSpeed = maxFanSpeed;
   }
-
-  // Ensure fanSpeed is at least 90% of maxFanSpeed
-  int minimumAllowedSpeed = 0.9 * maxFanSpeed;
-  if (fanSpeed > 0 && fanSpeed < minimumAllowedSpeed) {
-    fanSpeed = minimumAllowedSpeed;
-  }
-
-  // Set fan speed
-  fanController.setFanSpeed(fanSpeed);
 
   // Debug output
   Serial.print("Temperature: ");
@@ -139,17 +121,13 @@ void runSystem() {
   Serial.print(" °C, Fan Speed: ");
   Serial.println(map(fanSpeed, 0, 255, 0, 100));
 
+  relay1.update(currentTemp);
+  relay2.update(currentTemp);
+  relay3.update(currentTemp);
+  relay4.update(currentTemp);
+
   // Send data to WebSocket server
   WebSocketManager::getInstance().sendData(currentTemp, fanSpeed);
-
-  if (currentTemp > 28) 
-  {
-    relay.turnOn();
-  }
-  else 
-  {
-    relay.turnOff();
-  }
 
   delay(1000); // Update every second
 }

@@ -3,6 +3,8 @@
 
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <DHT.h>
+#include <DHT_U.h>
 
 class SensorManager {
 public:
