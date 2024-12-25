@@ -11,9 +11,9 @@ constexpr uint16_t WEBSOCKET_SERVER_PORT = 8000;
 
 // Sensor pins
 constexpr int TEMP_SENSOR_PIN = 26;       // DS18B20 DATA pin
-constexpr int PHOTORESISTOR_PIN = 17;     // Photoresistor pin
-constexpr int INFRARED_SENSOR_PIN = 19;  // Infrared sensor pin
-constexpr int SOUND_SENSOR_PIN = 18;     // Sound sensor pin
+constexpr int PHOTORESISTOR_PIN = 4;     // Photoresistor pin
+constexpr int INFRARED_SENSOR_PIN = 18;  // Infrared sensor pin
+constexpr int SOUND_SENSOR_PIN = 15;     // Sound sensor pin
 
 // Fan control pins
 constexpr int FAN_PWM_PIN = 16;          // PWM pin for fan

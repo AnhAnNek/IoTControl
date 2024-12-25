@@ -4,6 +4,8 @@
 #include "WebSocketManager.h"
 #include "WiFiManager.h"
 #include "Constants.h"
+#include "RelayControl.h"
+#include "StompClient.h"
 
 // Global Variables
 float currentTemp = 0.0;
@@ -18,6 +20,22 @@ int maxFanSpeed = 255; // Maximum fan speed (PWM value)
 // Instantiate SensorManager and FanController
 SensorManager sensorManager(TEMP_SENSOR_PIN, PHOTORESISTOR_PIN, INFRARED_SENSOR_PIN, SOUND_SENSOR_PIN);
 FanController fanController(FAN_PWM_PIN, FAN_PWM_PIN_1);
+RelayControl relay(19, LOW);
+
+// WebSocket server URL
+const char* websocket_server = "ws://192.168.31.2:8001/ws";
+
+// STOMP client
+StompClient stompClient(websocket_server);
+
+// Message handlers for specific destinations
+void handleGreetings(const String& message) {
+    Serial.println("Greetings received: " + message);
+}
+
+void handleAlerts(const String& message) {
+    Serial.println("Alert received: " + message);
+}
 
 // Custom WebSocket message handler
 void customMessageHandler(const char* message) {
@@ -59,6 +77,18 @@ void initializeSystem() {
   WebSocketManager& webSocketManager = WebSocketManager::getInstance();
   webSocketManager.initialize(WEBSOCKET_SERVER_HOST, WEBSOCKET_SERVER_PORT);
   webSocketManager.setOnReceivedMessageCallback(customMessageHandler);
+
+  relay.begin();
+  Serial.println("Relay initialized");
+
+  // Connect to the STOMP server
+  if (stompClient.connectToServer()) {
+      stompClient.setMessageHandler();
+
+      // Subscribe to destinations with specific handlers
+      stompClient.subscribe("/topic/greetings", handleGreetings);
+      stompClient.subscribe("/topic/alerts", handleAlerts);
+  }
 }
 
 // Function to run the main system loop
@@ -111,6 +141,15 @@ void runSystem() {
 
   // Send data to WebSocket server
   WebSocketManager::getInstance().sendData(currentTemp, fanSpeed);
+
+  if (currentTemp > 28) 
+  {
+    relay.turnOn();
+  }
+  else 
+  {
+    relay.turnOff();
+  }
 
   delay(1000); // Update every second
 }
