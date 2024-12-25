@@ -6,12 +6,11 @@ constexpr const char* WIFI_SSID = "Anh An";
 constexpr const char* WIFI_PASSWORD = "qwertyuiop";
 
 // WebSocket server details
-constexpr const char* WEBSOCKET_SERVER_HOST = "192.168.31.2";
+constexpr const char* WEBSOCKET_SERVER_HOST = "192.168.31.100";
 constexpr uint16_t WEBSOCKET_SERVER_PORT = 8000;
 
 // Sensor pins
 constexpr int TEMP_SENSOR_PIN = 26;       // DS18B20 DATA pin
-constexpr int SOUND_SENSOR_PIN = 16;     // Sound sensor pin
 
 constexpr int DHT_PIN = 25;
 

@@ -9,7 +9,7 @@
 class SensorManager {
 public:
   // Constructor
-  SensorManager(int tempPin, int soundPin, int dhtPin);
+  SensorManager(int tempPin, int dhtPin);
 
   // Initialize sensors
   void initializeSensors();
@@ -18,12 +18,10 @@ public:
   float getTemperature();            // DS18B20
   float getEnvTemperature();         // DHT sensor
   float getEnvHumidity();            // DHT sensor humidity
-  int readSoundSensor();             // Sound sensor
 
 private:
   // Pin configurations
   int tempPin;
-  int soundPin;
   int dhtPin;
 
   // DS18B20 sensor

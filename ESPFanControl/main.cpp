@@ -10,7 +10,7 @@
 String deviceName;
 DeviceHealth deviceHealth;
 
-SensorManager sensorManager(TEMP_SENSOR_PIN, SOUND_SENSOR_PIN, DHT_PIN);
+SensorManager sensorManager(TEMP_SENSOR_PIN, DHT_PIN);
 
 RelayControl relay1(RELAY1_PIN, "relay1", HIGH);
 RelayControl relay2(RELAY2_PIN, "relay2", HIGH);
@@ -56,17 +56,13 @@ void runSystem() {
   float currentTemp = sensorManager.getTemperature();
   float envTemp = sensorManager.getEnvTemperature();
   float envHumidity = sensorManager.getEnvHumidity();
-  int soundValue = sensorManager.readSoundSensor();
-
-  Serial.print("Sound Sensor Value: ");
-  Serial.println(soundValue);
 
   if (currentTemp == DEVICE_DISCONNECTED_C) {
     Serial.println("Error: Could not read temperature!");
     return;
   }
 
-  SensorData sensor("INFO", currentTemp, envTemp, envHumidity, soundValue);
+  SensorData sensor("INFO", currentTemp, envTemp, envHumidity);
   const char* jsonSensorData = sensor.toJSON();
   WebSocketManager::getInstance().send(jsonSensorData);
   delete[] jsonSensorData;

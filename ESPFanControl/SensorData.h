@@ -10,11 +10,10 @@ public:
     float temp;
     float envTemp;
     float envHumidity;
-    int soundLevel;
 
     // Constructor
-    SensorData(const char* type, float temp, float envTemp, float envHumidity, int soundLevel)
-        : type(type), temp(temp), envTemp(envTemp), envHumidity(envHumidity), soundLevel(soundLevel) {}
+    SensorData(const char* type, float temp, float envTemp, float envHumidity)
+        : type(type), temp(temp), envTemp(envTemp), envHumidity(envHumidity) {}
 
     // Convert to JSON string
     const char* toJSON();

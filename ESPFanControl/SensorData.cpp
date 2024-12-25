@@ -11,7 +11,6 @@ const char* SensorData::toJSON() {
     doc["temp"] = temp;
     doc["envTemp"] = envTemp;
     doc["envHumidity"] = envHumidity;
-    doc["soundLevel"] = soundLevel;
 
     // Allocate memory for the JSON string
     size_t jsonSize = measureJson(doc) + 1; // +1 for null terminator
