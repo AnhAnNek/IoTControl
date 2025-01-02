@@ -1,6 +1,7 @@
 package com.example.iot_web_server.ws;
 
 import com.example.iot_web_server.message.service.MessageService;
+import com.example.iot_web_server.util.Utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,6 +51,7 @@ public class WSController extends TextWebSocketHandler {
                     messageService.saveMessageAsync(type, receivedMsg);
 
                     broadcastToAll(receivedMsg);
+                    Utils.SHARED_INFO = receivedMsg;
                 }
 
                 if (type.equals("INFO_RELAYS")) {

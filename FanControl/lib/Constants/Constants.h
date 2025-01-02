@@ -14,6 +14,8 @@ constexpr int TEMP_SENSOR_PIN = 26;       // DS18B20 DATA pin
 
 constexpr int DHT_PIN = 25;
 
+constexpr int LED_PIN = 27;
+
 // Relay Pins
 constexpr int RELAY1_PIN = 23;           // Relay 1 pin
 constexpr int RELAY2_PIN = 22;           // Relay 2 pin

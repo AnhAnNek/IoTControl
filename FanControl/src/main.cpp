@@ -2,20 +2,28 @@
 #include "SensorManager.h"
 #include "WebSocketManager.h"
 #include "WiFiManager.h"
-#include "Constants.h"
 #include "RelayControl.h"
-#include "DeviceHealth.h"
 #include "SensorData.h"
+#include "Constants.h"
+#include "DeviceHealth.h"
 
 String deviceName;
 DeviceHealth deviceHealth;
 
 SensorManager sensorManager(TEMP_SENSOR_PIN, DHT_PIN);
 
-RelayControl relay1(RELAY1_PIN, "relay1", HIGH);
-RelayControl relay2(RELAY2_PIN, "relay2", HIGH);
-RelayControl relay3(RELAY3_PIN, "relay3", HIGH);
-RelayControl relay4(RELAY4_PIN, "relay4", HIGH);
+RelayControl relay1(RELAY1_PIN, "relay1", LOW);
+RelayControl relay2(RELAY2_PIN, "relay2", LOW);
+RelayControl relay3(RELAY3_PIN, "relay3", LOW);
+RelayControl relay4(RELAY4_PIN, "relay4", LOW);
+
+
+const int pwmPin = 16;  // GPIO để kết nối với dây vàng của quạt
+unsigned long pulseTime = 0;
+float frequency = 0.0;
+float rpm = 0.0;
+const int pulsesPerRevolution = 1; // Giả sử mỗi pulse tương đương 1 vòng quay
+
 
 void customMessageHandler(const char* message);
 void initRelays();
@@ -23,7 +31,7 @@ void updateRelays(float currentTemp);
 String getDeviceName();
 
 // Function to initialize the system
-void initializeSystem() {
+void setup() {
   Serial.begin(115200);
 
   // Initialize Wi-Fi
@@ -46,10 +54,14 @@ void initializeSystem() {
   initRelays();
 
   deviceName = getDeviceName();
+
+  pinMode(LED_PIN, OUTPUT);
+
+  pinMode(pwmPin, INPUT_PULLUP);
 }
 
 // Function to run the main system loop
-void runSystem() {
+void loop() {
   // Handle WebSocket messages
   WebSocketManager::getInstance().handleMessages();
 
@@ -62,12 +74,32 @@ void runSystem() {
     return;
   }
 
+  updateRelays(currentTemp);
+  digitalWrite(LED_PIN, HIGH);  
   SensorData sensor("INFO", currentTemp, envTemp, envHumidity);
   const char* jsonSensorData = sensor.toJSON();
   WebSocketManager::getInstance().send(jsonSensorData);
+  digitalWrite(LED_PIN, LOW);
   delete[] jsonSensorData;
 
-  updateRelays(currentTemp);
+
+  pulseTime = pulseIn(pwmPin, HIGH, 1000000);
+  
+  if (pulseTime > 0) {
+    // Tính tần số PWM (Hz) từ thời gian giữa các pulse
+    frequency = 1000000.0 / pulseTime;
+    
+    // Tính RPM từ tần số
+    rpm = (frequency / pulsesPerRevolution) * 60;
+    
+    // In ra tần số PWM và RPM
+    Serial.print("Tần số PWM: ");
+    Serial.print(frequency);
+    Serial.print(" Hz, ");
+    Serial.print("RPM: ");
+    Serial.println(rpm);
+  }
+
 
   delay(1000);
 }
@@ -131,10 +163,10 @@ void initRelays()
   relay3.begin();
   relay4.begin();
   
-  relay1.setAutoMode(true, 22, 26);
-  relay2.setAutoMode(true, 24, 28);
-  relay3.setAutoMode(true, 26, 29);
-  relay4.setAutoMode(true, 27, 30);
+  relay1.setAutoMode(true, 26, 22);
+  relay2.setAutoMode(true, 28, 24);
+  relay3.setAutoMode(true, 29, 26);
+  relay4.setAutoMode(true, 30, 28);
   Serial.println("Relay initialized");
 }
 

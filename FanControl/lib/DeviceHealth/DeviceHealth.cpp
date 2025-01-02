@@ -1,5 +1,6 @@
 #include "DeviceHealth.h"
 
+// Constructor
 DeviceHealth::DeviceHealth() {
     // Initialization if needed
 }
@@ -37,13 +38,11 @@ void DeviceHealth::scanI2CDevices(JsonArray& deviceList) {
 
 bool DeviceHealth::checkI2CHealth(uint8_t address) {
     // Placeholder for device-specific health check
-    // Send a command and expect a response to verify health
     return true; // Assume healthy for demonstration
 }
 
 void DeviceHealth::scanGPIOSensors(JsonArray& deviceList) {
-    // List of GPIO pins to scan (specific to your ESP32 model)
-    int pins[] = {2, 4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
+    int pins[] = {TEMP_SENSOR_PIN, DHT_PIN, LED_PIN, RELAY1_PIN, RELAY2_PIN, RELAY3_PIN, RELAY4_PIN};
     for (int pin : pins) {
         pinMode(pin, INPUT);
         JsonObject device = deviceList.createNestedObject();
@@ -60,14 +59,21 @@ bool DeviceHealth::checkGPIOHealth(uint8_t pin) {
 }
 
 String DeviceHealth::identifyDeviceOnPin(uint8_t pin) {
-    // Placeholder logic to identify device type based on pin
-    // Customize this based on your hardware configuration
-    if (pin == 2) {
+    // Map pins to specific devices using constants
+    if (pin == TEMP_SENSOR_PIN) {
+        return "Temperature Sensor (DS18B20)";
+    } else if (pin == DHT_PIN) {
+        return "DHT Sensor (Temp And Humality)";
+    } else if (pin == LED_PIN) {
         return "LED";
-    } else if (pin == 12 || pin == 13) {
-        return "Temperature Sensor";
-    } else if (pin == 14 || pin == 15) {
-        return "Button";
+    } else if (pin == RELAY1_PIN) {
+        return "Relay 1";
+    } else if (pin == RELAY2_PIN) {
+        return "Relay 2";
+    } else if (pin == RELAY3_PIN) {
+        return "Relay 3";
+    } else if (pin == RELAY4_PIN) {
+        return "Relay 4";
     }
-    return "Unknown Device"; // Default for unconfigured pins
+    return "Unknown Device";
 }

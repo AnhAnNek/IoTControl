@@ -38,7 +38,7 @@ function App() {
       >
         <Toolbar>
           <Typography variant="h6" noWrap>
-            Fan Management Dashboard
+            IoT Management Dashboard
           </Typography>
         </Toolbar>
       </AppBar>

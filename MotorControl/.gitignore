@@ -1,0 +1,37 @@
+# PlatformIO Core
+/.pio/
+/.vscode/
+
+# PlatformIO IDE
+/.idea/
+/*.iml
+/.project
+/.cproject
+/.settings/
+eclipse.*
+atmelstudio.*
+ipch/
+lib/*/.piolibdeps/
+
+# Logs and databases
+*.log
+*.csv
+*.db
+*.sdb
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Backup files
+*.bak
+*.swp
+*.swo
+
+# Environment files
+.env

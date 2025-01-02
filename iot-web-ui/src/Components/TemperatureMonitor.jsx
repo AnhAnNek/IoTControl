@@ -227,7 +227,7 @@ const TemperatureMonitor = () => {
       </Box>
 
       <Box sx={{ marginTop: "30px", width: "100%" }}>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom bold>
           Relay Controls
         </Typography>
         <Grid container spacing={2}>

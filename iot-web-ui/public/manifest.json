@@ -1,5 +1,5 @@
 {
-  "short_name": "React App",
+  "short_name": "IoT Control",
   "name": "Create React App Sample",
   "icons": [
     {
@@ -9,12 +9,12 @@
     },
     {
       "src": "logo.svg",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "sizes": "192x192"
     },
     {
       "src": "logo.svg",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "sizes": "512x512"
     }
   ],

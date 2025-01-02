@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <Wire.h>       // For I2C communication
 #include <ArduinoJson.h> // JSON library
+#include "Constants.h" // Include the constants defined in MessageTypes.h
 
 class DeviceHealth {
 public:
@@ -18,7 +19,7 @@ private:
     bool checkI2CHealth(uint8_t address);
     void scanGPIOSensors(JsonArray& deviceList);
     bool checkGPIOHealth(uint8_t pin);
-    String identifyDeviceOnPin(uint8_t pin); // New method to identify device
+    String identifyDeviceOnPin(uint8_t pin);
 };
 
 #endif
