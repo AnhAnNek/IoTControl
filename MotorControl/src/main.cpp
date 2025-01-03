@@ -20,6 +20,8 @@ void setup() {
 }
 
 void loop() {
+  Serial.begin(115200);
+
   // Smoothly increase and decrease motor and LED brightness
   for (int dutyCycle = 0; dutyCycle <= 255; dutyCycle++) {
     setDutyCycle(dutyCycle);

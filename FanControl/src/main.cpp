@@ -12,18 +12,10 @@ DeviceHealth deviceHealth;
 
 SensorManager sensorManager(TEMP_SENSOR_PIN, DHT_PIN);
 
-RelayControl relay1(RELAY1_PIN, "relay1", LOW);
-RelayControl relay2(RELAY2_PIN, "relay2", LOW);
-RelayControl relay3(RELAY3_PIN, "relay3", LOW);
-RelayControl relay4(RELAY4_PIN, "relay4", LOW);
-
-
-const int pwmPin = 16;  // GPIO để kết nối với dây vàng của quạt
-unsigned long pulseTime = 0;
-float frequency = 0.0;
-float rpm = 0.0;
-const int pulsesPerRevolution = 1; // Giả sử mỗi pulse tương đương 1 vòng quay
-
+RelayControl relay1(RELAY1_PIN, "relay1", HIGH);
+RelayControl relay2(RELAY2_PIN, "relay2", HIGH);
+RelayControl relay3(RELAY3_PIN, "relay3", HIGH);
+RelayControl relay4(RELAY4_PIN, "relay4", HIGH);
 
 void customMessageHandler(const char* message);
 void initRelays();
@@ -56,8 +48,6 @@ void setup() {
   deviceName = getDeviceName();
 
   pinMode(LED_PIN, OUTPUT);
-
-  pinMode(pwmPin, INPUT_PULLUP);
 }
 
 // Function to run the main system loop
@@ -81,25 +71,6 @@ void loop() {
   WebSocketManager::getInstance().send(jsonSensorData);
   digitalWrite(LED_PIN, LOW);
   delete[] jsonSensorData;
-
-
-  pulseTime = pulseIn(pwmPin, HIGH, 1000000);
-  
-  if (pulseTime > 0) {
-    // Tính tần số PWM (Hz) từ thời gian giữa các pulse
-    frequency = 1000000.0 / pulseTime;
-    
-    // Tính RPM từ tần số
-    rpm = (frequency / pulsesPerRevolution) * 60;
-    
-    // In ra tần số PWM và RPM
-    Serial.print("Tần số PWM: ");
-    Serial.print(frequency);
-    Serial.print(" Hz, ");
-    Serial.print("RPM: ");
-    Serial.println(rpm);
-  }
-
 
   delay(1000);
 }

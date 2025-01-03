@@ -39,7 +39,12 @@ const ESPControl = () => {
   // Auto-scroll effect when new messages are added
   useEffect(() => {
     if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      const terminal = terminalRef.current;
+      const isAtBottom = terminal.scrollHeight - terminal.scrollTop === terminal.clientHeight;
+
+      if (isAtBottom) {
+        terminal.scrollTop = terminal.scrollHeight;
+      }
     }
   }, [receivedMessages]);
 
