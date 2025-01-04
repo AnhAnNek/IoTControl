@@ -30,6 +30,12 @@ bool SensorManager::isObstacleRight() {
 // Method to check for proximity to stairs using the IR sensor
 bool SensorManager::isNearStairs() {
     int value = digitalRead(_pins.irPin);
+
+    if (value == -1) { // digitalRead normally doesn't return -1, so you can simulate this
+        Serial.println("Sensor not available. Returning true.");
+        return true; // Fail-safe: assume proximity to stairs
+    }
+
     Serial.print("IR Read: ");
     Serial.println(value);
     Serial.println();

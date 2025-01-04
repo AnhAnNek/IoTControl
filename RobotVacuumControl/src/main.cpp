@@ -30,7 +30,7 @@ unsigned long previousMillis = 0;
 void customMessageHandler(const char* message);
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // Initialize Wi-Fi
   WiFiManager& wifiManager = WiFiManager::getInstance();
