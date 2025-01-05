@@ -57,10 +57,18 @@ const TemperatureMonitor = () => {
         setTemperature(parseFloat(data.temp.toFixed(1))); // Ensure one decimal place
 
         // Update history for graph
-        setTempHistory((prev) => [...prev.slice(-19), parseFloat(data.temp.toFixed(1))]); // Keep the last 20 data points
+        setTempHistory((prev) => [
+          ...prev.slice(-19),
+          parseFloat(data.temp.toFixed(1)),
+        ]); // Keep the last 20 data points
         setTimeHistory((prev) => [
           ...prev.slice(-19),
-          new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          }),
         ]);
       }
 
@@ -93,7 +101,9 @@ const TemperatureMonitor = () => {
     if (socketRef.current) {
       socketRef.current.send(
         JSON.stringify({
-          type: updatedRelays[index].status ? "COMMAND_TURN_ON_RELAY" : "COMMAND_TURN_OFF_RELAY",
+          type: updatedRelays[index].status
+            ? "COMMAND_TURN_ON_RELAY"
+            : "COMMAND_TURN_OFF_RELAY",
           relayName,
         })
       );
@@ -137,6 +147,10 @@ const TemperatureMonitor = () => {
     ],
   };
 
+  const minTemp =
+    tempHistory.length > 0 ? Math.round(Math.min(...tempHistory) - 1) : 0;
+  const maxTemp =
+    tempHistory.length > 0 ? Math.round(Math.max(...tempHistory) + 1) : 10;
   const graphOptions = {
     responsive: true,
     plugins: {
@@ -156,14 +170,21 @@ const TemperatureMonitor = () => {
           display: true,
           text: "Temperature (°C)",
         },
-        suggestedMin: 0,
-        suggestedMax: 100,
+        suggestedMin: minTemp,
+        suggestedMax: maxTemp,
       },
     },
   };
 
   return (
-    <Box sx={{ padding: "20px", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+    <Box
+      sx={{
+        padding: "20px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+      }}
+    >
       <Typography variant="h5" gutterBottom>
         Temperature Monitor
       </Typography>
@@ -171,14 +192,29 @@ const TemperatureMonitor = () => {
       <Grid container spacing={2} alignItems="flex-start">
         {/* Card 1: Current Temperature */}
         <Grid item xs={12} sm={6} md={3}>
-          <Tooltip title="This is the temperature of the target device. Use this to control the relays." arrow>
+          <Tooltip
+            title="This is the temperature of the target device. Use this to control the relays."
+            arrow
+          >
             <Card sx={{ boxShadow: 3 }}>
               <CardContent>
-                <Typography variant="h6" color="textSecondary">
+                <Typography
+                  variant="h6"
+                  color="textSecondary"
+                  sx={{
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   Target Temperature
                 </Typography>
                 <Typography variant="h4" color="primary">
-                  {temperature !== null ? `${temperature} °C` : <CircularProgress />}
+                  {temperature !== null ? (
+                    `${temperature} °C`
+                  ) : (
+                    <CircularProgress />
+                  )}
                 </Typography>
               </CardContent>
             </Card>
@@ -207,7 +243,11 @@ const TemperatureMonitor = () => {
                 Ambient Humidity
               </Typography>
               <Typography variant="h4" color="primary">
-                {envHumidity !== null ? `${envHumidity}%` : <CircularProgress />}
+                {envHumidity !== null ? (
+                  `${envHumidity}%`
+                ) : (
+                  <CircularProgress />
+                )}
               </Typography>
             </CardContent>
           </Card>
@@ -260,7 +300,9 @@ const TemperatureMonitor = () => {
                       label="Temp to Run (°C)"
                       type="number"
                       value={relay.tempToRun || ""}
-                      onChange={(e) => handleTempChange(index, "tempToRun", e.target.value)}
+                      onChange={(e) =>
+                        handleTempChange(index, "tempToRun", e.target.value)
+                      }
                       fullWidth
                       margin="dense"
                     />
@@ -268,7 +310,9 @@ const TemperatureMonitor = () => {
                       label="Temp to Stop (°C)"
                       type="number"
                       value={relay.tempToStop || ""}
-                      onChange={(e) => handleTempChange(index, "tempToStop", e.target.value)}
+                      onChange={(e) =>
+                        handleTempChange(index, "tempToStop", e.target.value)
+                      }
                       fullWidth
                       margin="dense"
                     />
@@ -282,7 +326,6 @@ const TemperatureMonitor = () => {
                       Set Temperatures
                     </Button>
                   </Box>
-
                 </CardContent>
               </Card>
             </Grid>
