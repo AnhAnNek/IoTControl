@@ -28,7 +28,6 @@ const TemperatureMonitor = () => {
   const [temperature, setTemperature] = useState(0.0);
   const [envTemp, setEnvTemp] = useState(0);
   const [envHumidity, setEnvHumidity] = useState(0);
-  const [soundLevel, setSoundLevel] = useState(0);
   const [tempHistory, setTempHistory] = useState([]);
   const [timeHistory, setTimeHistory] = useState([]);
   const socketRef = useRef(null);
@@ -39,6 +38,13 @@ const TemperatureMonitor = () => {
     { status: false, tempToRun: 0, tempToStop: 0, isAutoMode: true },
     { status: false, tempToRun: 0, tempToStop: 0, isAutoMode: true },
     { status: false, tempToRun: 0, tempToStop: 0, isAutoMode: true },
+  ]);
+
+  const [settingTemps, setSettingTemps] = useState([
+    { tempToRun: 0, tempToStop: 0 },
+    { tempToRun: 0, tempToStop: 0 },
+    { tempToRun: 0, tempToStop: 0 },
+    { tempToRun: 0, tempToStop: 0 },
   ]);
 
   useEffect(() => {
@@ -75,10 +81,10 @@ const TemperatureMonitor = () => {
       // Update environmental data
       if (data.envTemp !== undefined) setEnvTemp(data.envTemp);
       if (data.envHumidity !== undefined) setEnvHumidity(data.envHumidity);
-      if (data.soundLevel !== undefined) setSoundLevel(data.soundLevel);
 
-      if (data.type === "INFO_RELAYS" && Array.isArray(data.relays)) {
-        setRelays(data.relays);
+      const returnedRelays = data.relays;
+      if (data.type === "INFO_RELAYS" && Array.isArray(returnedRelays)) {
+        setRelays(returnedRelays);
       }
     };
 
@@ -110,15 +116,15 @@ const TemperatureMonitor = () => {
     }
   };
 
-  const handleTempChange = (index, field, value) => {
-    const updatedRelays = [...relays];
+  const handleSettingTempChange = (index, field, value) => {
+    const updatedRelays = [...settingTemps];
     updatedRelays[index][field] = parseFloat(value) || 0;
-    setRelays(updatedRelays);
+    setSettingTemps(updatedRelays);
   };
 
   const handleTempSet = (index) => {
     const relayName = `relay${index + 1}`;
-    const relay = relays[index];
+    const relay = settingTemps[index];
 
     // Send updated relay configuration to the server
     if (socketRef.current) {
@@ -225,7 +231,15 @@ const TemperatureMonitor = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ boxShadow: 3 }}>
             <CardContent>
-              <Typography variant="h6" color="textSecondary">
+              <Typography
+                variant="h6"
+                color="textSecondary"
+                sx={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
                 Ambient Temperature
               </Typography>
               <Typography variant="h4" color="primary">
@@ -239,7 +253,15 @@ const TemperatureMonitor = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card sx={{ boxShadow: 3 }}>
             <CardContent>
-              <Typography variant="h6" color="textSecondary">
+              <Typography
+                variant="h6"
+                color="textSecondary"
+                sx={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
                 Ambient Humidity
               </Typography>
               <Typography variant="h4" color="primary">
@@ -275,14 +297,15 @@ const TemperatureMonitor = () => {
             <Grid item xs={12} sm={6} md={3} key={index}>
               <Card sx={{ boxShadow: 3 }}>
                 <CardContent>
-                  <Typography variant="h6" color="textSecondary">
-                    Relay {index + 1}
+                  <Typography variant="h5" color="textSecondary">
+                    <strong>Relay {index + 1}</strong>
                   </Typography>
                   <Typography variant="body1" color="textSecondary" mt={1}>
-                    Auto Mode: {relay?.isAutoMode ? "ON" : "OFF"}
+                    <strong>Auto Mode:</strong>{" "}
+                    {relay?.isAutoMode ? "ON" : "OFF"}
                   </Typography>
                   <Typography variant="body1" color="textSecondary">
-                    Status: {relay.status ? "ON" : "OFF"}
+                    <strong>Status:</strong> {relay.status ? "ON" : "OFF"}
                   </Typography>
                   <Box mb={2} mt={1}>
                     <Button
@@ -294,14 +317,23 @@ const TemperatureMonitor = () => {
                       {relay.status ? "Turn OFF" : "Turn ON"}
                     </Button>
                   </Box>
-
+                  <Typography variant="body1" color="textSecondary">
+                    <strong>Temp to Run:</strong> {relay.tempToRun || ""}°C
+                  </Typography>
+                  <Typography variant="body1" color="textSecondary">
+                    <strong>Temp to Stop:</strong> {relay.tempToStop || ""}°C
+                  </Typography>
                   <Box sx={{ marginTop: "10px" }}>
                     <TextField
                       label="Temp to Run (°C)"
                       type="number"
-                      value={relay.tempToRun || ""}
+                      value={settingTemps[index]?.tempToRun || ""}
                       onChange={(e) =>
-                        handleTempChange(index, "tempToRun", e.target.value)
+                        handleSettingTempChange(
+                          index,
+                          "tempToRun",
+                          e.target.value
+                        )
                       }
                       fullWidth
                       margin="dense"
@@ -309,9 +341,13 @@ const TemperatureMonitor = () => {
                     <TextField
                       label="Temp to Stop (°C)"
                       type="number"
-                      value={relay.tempToStop || ""}
+                      value={settingTemps[index]?.tempToStop || ""}
                       onChange={(e) =>
-                        handleTempChange(index, "tempToStop", e.target.value)
+                        handleSettingTempChange(
+                          index,
+                          "tempToStop",
+                          e.target.value
+                        )
                       }
                       fullWidth
                       margin="dense"
