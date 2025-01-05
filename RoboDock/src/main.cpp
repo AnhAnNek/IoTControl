@@ -1,28 +1,17 @@
 #include <Arduino.h>
-#include "BatteryChargingStation.h"
-#include "Constants.h"
+#include <IRremote.h>
 
-BatteryChargingStation station(IR_LED_PIN, RELAY_PIN, ULTRASONIC_TRIG, ULTRASONIC_ECHO);
+const int irPin = 23; // Pin connected to KY-005 (Signal)
 
 void setup() {
-    Serial.begin(115200);
-    station.init();
-    Serial.println("Battery Charging Station Initialized");
+  IrSender.begin(irPin); // Initialize IR sender
 }
 
 void loop() {
-    station.signalRobot(); // Continuously signal for the robot
-
-    if (station.isRobotDocked()) {
-        Serial.println("Robot Docked. Starting Charging...");
-        station.startCharging();
-        delay(5000); // Simulate charging for 5 seconds
-        station.stopCharging();
-        Serial.println("Charging Completed");
-    } else {
-        station.stopCharging();
-        Serial.println("Awaiting Robot...");
-    }
-
-    delay(1000); // Loop every second
+  String jsonData = "{\"name\":\"robot\",\"command\":\"move\",\"speed\":5}";
+  for (unsigned int i = 0; i < jsonData.length(); i++) {
+    IrSender.sendNECMSB(jsonData[i], 8); // Send each character as an 8-bit value
+    delay(50); // Small delay to ensure smooth transmission
+  }
+  delay(1000); // Wait for 1 second before sending again
 }
