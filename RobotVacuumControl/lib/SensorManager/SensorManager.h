@@ -6,9 +6,12 @@
 
 // Define a structure to hold pin configuration for the sensors
 struct SensorPins {
-    int frontPin;
-    int leftPin;
-    int rightPin;
+    int frontTrigPin;
+    int frontEchoPin;
+    int leftTrigPin;
+    int leftEchoPin;
+    int rightTrigPin;
+    int rightEchoPin;
     int irPin;
 };
 
@@ -31,8 +34,8 @@ public:
 private:
     SensorPins _pins;  // Struct to store sensor pins
 
-    // Helper method to read ultrasonic sensor
-    int readUltrasonic(int pin);
+    // Helper method to read ultrasonic sensor distance
+    long readUltrasonic(int trigPin, int echoPin);
 };
 
 #endif // SENSORMANAGER_H

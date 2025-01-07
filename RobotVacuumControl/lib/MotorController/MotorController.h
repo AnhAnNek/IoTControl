@@ -12,6 +12,8 @@ struct MotorPins {
     int in4;
     int ena;
     int enb;
+    int sideBrush;  // PWM pin for side brush
+    int mainBrush;  // PWM pin for main brush
 };
 
 class MotorController {
@@ -24,6 +26,8 @@ public:
 
     // Methods to control motor movements
     void setMotorSpeeds(int leftSpeed, int rightSpeed);
+    void setBrushSpeeds(int sideBrushSpeed, int mainBrushSpeed);
+    void stopBrushes();
     void moveForward();
     void moveBackward();
     void rotateLeft();

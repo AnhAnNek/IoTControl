@@ -14,6 +14,9 @@ public:
     void rotateRight(int speed);
     void stop();
 
+    void setBrushSpeeds(int sideBrushSpeed, int mainBrushSpeed);
+    void stopBrushes();
+
 private:
     SensorManager& sensorManager;
     MotorController& motorController;

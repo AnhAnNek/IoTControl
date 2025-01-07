@@ -26,3 +26,11 @@ void RobotController::rotateRight(int speed) {
 void RobotController::stop() {
   motorController.stop();
 }
+
+void RobotController::setBrushSpeeds(int sideBrushSpeed, int mainBrushSpeed) {
+    motorController.setBrushSpeeds(sideBrushSpeed, mainBrushSpeed);
+}
+
+void RobotController::stopBrushes() {
+    motorController.stopBrushes();
+}
