@@ -33,7 +33,21 @@ RobotController robotController(sensorManager, motorController);
 
 // const int PWM_PIN = 21;
 // const int recvPin = 22;
+
 unsigned long previousMillis = 0;
+unsigned long rotationDuration = 1000; // Time for rotation in milliseconds
+unsigned long moveDuration = 2000;     // Time for moving forward in milliseconds
+unsigned long stopDuration = 1000;     // Pause time when stopping
+
+enum RobotState {
+    IDLE,
+    ROTATING_RIGHT,
+    ROTATING_LEFT,
+    MOVING_FORWARD,
+    STOPPING
+};
+
+RobotState currentState = IDLE;
 
 void customMessageHandler(const char* message);
 
@@ -78,18 +92,71 @@ void loop() {
   //   IrReceiver.resume(); // Prepare to receive the next signal
   // }
 
-  if (sensorManager.isObstacleLeft()) {
-    Serial.println("Obstacle detected in front!");
-    robotController.stop();
-    robotController.rotateRight(ROTATION_SPEED);
-  } else if (sensorManager.isNearStairs()) {
-    Serial.println("Ledge detected! Stopping...");
-    robotController.stop();
-  } else {
-    Serial.println("moveForward");
-    robotController.moveForward(DEFAULT_SPEED);
-    delay(2000);
-  }
+    unsigned long currentMillis = millis();
+
+    switch (currentState) {
+        case IDLE:
+            if (sensorManager.isObstacleFront()) {
+                Serial.println("Obstacle detected in front!");
+                robotController.stop();
+                currentState = ROTATING_RIGHT;
+                previousMillis = currentMillis;
+            } else if (sensorManager.isObstacleLeft()) {
+                Serial.println("Obstacle detected on the left!");
+                robotController.stop();
+                currentState = ROTATING_RIGHT;
+                previousMillis = currentMillis;
+            } else if (sensorManager.isObstacleRight()) {
+                Serial.println("Obstacle detected on the right!");
+                robotController.stop();
+                currentState = ROTATING_LEFT;
+                previousMillis = currentMillis;
+            } else if (sensorManager.isNearStairs()) {
+                Serial.println("Ledge detected! Stopping...");
+                robotController.stop();
+                currentState = STOPPING;
+                previousMillis = currentMillis;
+            } else {
+                Serial.println("Moving forward...");
+                robotController.moveForward(DEFAULT_SPEED);
+                currentState = MOVING_FORWARD;
+                previousMillis = currentMillis;
+            }
+            break;
+
+        case ROTATING_RIGHT:
+            if (currentMillis - previousMillis >= rotationDuration) {
+                Serial.println("Finished rotating right.");
+                currentState = IDLE;
+            } else {
+                robotController.rotateRight(ROTATION_SPEED);
+            }
+            break;
+
+        case ROTATING_LEFT:
+            if (currentMillis - previousMillis >= rotationDuration) {
+                Serial.println("Finished rotating left.");
+                currentState = IDLE;
+            } else {
+                robotController.rotateLeft(ROTATION_SPEED);
+            }
+            break;
+
+        case MOVING_FORWARD:
+            if (currentMillis - previousMillis >= moveDuration) {
+                Serial.println("Finished moving forward.");
+                robotController.stop();
+                currentState = IDLE;
+            }
+            break;
+
+        case STOPPING:
+            if (currentMillis - previousMillis >= stopDuration) {
+                Serial.println("Finished stopping.");
+                currentState = IDLE;
+            }
+            break;
+    }
 
   // // Gradually increase speed
   // for (int speed = 0; speed <= 255; speed += 5) {

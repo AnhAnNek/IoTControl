@@ -8,8 +8,8 @@ Servo myServo;
 const int servoPin = 18;
 
 // Pins for HC-SR04
-const int trigPin = 5;
-const int echoPin = 4;
+const int trigPin = 17;
+const int echoPin = 16;
 
 // Pin for the push button
 const int buttonPin = 12; // Button pin to reset the servo

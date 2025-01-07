@@ -60,29 +60,16 @@ bool SensorManager::isNearStairs() {
 long SensorManager::readUltrasonic(int trigPin, int echoPin) {
     // Send a pulse to trigger the ultrasonic sensor
     digitalWrite(trigPin, LOW);
-    delayMicroseconds(2);
+    delayMicroseconds(2); // Ensure a clean LOW pulse
     digitalWrite(trigPin, HIGH);
-    delayMicroseconds(10);
+    delayMicroseconds(10); // Send a 10µs HIGH pulse
     digitalWrite(trigPin, LOW);
 
-    // Measure the duration of the pulse that comes back
-    long duration = pulseIn(echoPin, HIGH, 38000); // Timeout at ~400cm (38ms)
-
-    // Check for out-of-range conditions
-    if (duration == 0) {
-        Serial.println("No echo detected (object too close or out of range).");
-        return -1; // Indicates out of range
-    }
+    // Measure the duration of the echo pulse
+    long duration = pulseIn(echoPin, HIGH);
 
     // Calculate the distance in cm
-    long distance = duration * 0.0344 / 2; // Speed of sound is 0.0344 cm/us
+    long distance = duration * 0.034 / 2;
 
-    if (distance < 2) {
-        Serial.println("Object too close (< 2 cm).");
-        return -1; // Indicates out of range
-    } else if (distance > 400) {
-        Serial.println("Object too far (> 400 cm).");
-        return -1; // Indicates out of range
-    }
-    return distance;
+    return distance; // Return valid distance
 }
