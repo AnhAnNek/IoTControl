@@ -16,7 +16,8 @@ const int LEFT_SENSOR_TRIG_PIN = 19;    // Use GPIO 19 for Left Trigger
 const int LEFT_SENSOR_ECHO_PIN = 18;    // Use GPIO 18 for Left Echo
 const int RIGHT_SENSOR_TRIG_PIN = 5;    // Use GPIO 5 for Right Trigger
 const int RIGHT_SENSOR_ECHO_PIN = 4;    // Use GPIO 4 for Right Echo
-const int IR_SENSOR_PIN = 17;           // Use GPIO 17 for IR Sensor
+const int IR_OBSTACLE_PIN = 17;           // Use GPIO 17 for IR Sensor
+const int IR_RECEIVER_PIN = 34;
 
 // Define pins for motor controller
 const int MOTOR_IN1_PIN = 25;    // Use GPIO 25 for motor input 1
@@ -29,8 +30,7 @@ const int SIDE_BRUSH_PIN = 32;
 const int MAIN_BRUSH_PIN = 33;
 
 // Define speed constants
-const int DEFAULT_SPEED = 255;
-const int ROTATION_SPEED = 150;
+const int DEFAULT_SPEED = 80;
 
 // Define constants for thresholds and simulated values
 const int OBSTACLE_THRESHOLD_CM = 5; // Threshold for detecting obstacles

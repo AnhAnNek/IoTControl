@@ -1,6 +1,12 @@
 server:
   port: ${PRO_SERVER_PORT}
 
+  ssl:
+    key-store: classpath:keystore.p12
+    key-store-password: 123456
+    key-store-type: PKCS12
+    key-alias: youralias
+
 spring:
   application:
     name: iot-web-server
@@ -26,6 +32,17 @@ spring:
     open-in-view: true
     properties:
       hibernate.format_sql: true
+
+  rabbitmq:
+    host: ${PROD_RABBITMQ_HOST}
+    port: ${PROD_RABBITMQ_PORT}
+    username: ${PROD_RABBITMQ_USER}
+    password: ${PROD_RABBITMQ_PASSWORD}
+    virtual-host: /
+    listener:
+      simple:
+        concurrency: 3
+        max-concurrency: 10
 
 logging:
   file:

@@ -21,3 +21,5 @@ build/
 
 ./vs
 vs/**
+
+keystore.p12

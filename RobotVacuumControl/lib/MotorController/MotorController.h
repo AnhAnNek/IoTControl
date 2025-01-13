@@ -25,7 +25,7 @@ public:
     void begin();
 
     // Methods to control motor movements
-    void setMotorSpeeds(int leftSpeed, int rightSpeed);
+    void setMovingSpeeds(int leftSpeed, int rightSpeed);
     void setBrushSpeeds(int sideBrushSpeed, int mainBrushSpeed);
     void stopBrushes();
     void moveForward();
@@ -33,13 +33,15 @@ public:
     void rotateLeft();
     void rotateRight();
     void stop();
+    void setSideBrushSpeed(int speed);
+    void setMainBrushSpeed(int speed);
 
 private:
     MotorPins _pins;  // Struct to store motor control pins
 
     // Helper methods to set individual motor speeds and directions
-    void setLeftMotor(int speed, bool direction);
-    void setRightMotor(int speed, bool direction);
+    void setLeftMotorDirection(bool direction);
+    void setRightMotorDirection(bool direction);
 };
 
 #endif // MOTORCONTROLLER_H

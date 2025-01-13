@@ -1,75 +1,79 @@
 #include "SensorManager.h"
+#include <IRremote.h> // Include IRremote here
 
 // Constructor to initialize sensor pins
-SensorManager::SensorManager(SensorPins pins) {
-    _pins = pins; // Store the passed pins
-}
+SensorManager::SensorManager(SensorPins pins) : _pins(pins) {}
 
 // Method to initialize the sensors
 void SensorManager::begin() {
-    // Initialize pins for IR sensor and ultrasonic sensors
-    pinMode(_pins.irPin, INPUT);
+    // Initialize IR obstacle sensor pin
+    pinMode(_pins.irObstaclePin, INPUT);
+
+    // Initialize ultrasonic sensor pins
     pinMode(_pins.frontTrigPin, OUTPUT);
     pinMode(_pins.frontEchoPin, INPUT);
     pinMode(_pins.leftTrigPin, OUTPUT);
     pinMode(_pins.leftEchoPin, INPUT);
     pinMode(_pins.rightTrigPin, OUTPUT);
     pinMode(_pins.rightEchoPin, INPUT);
+
+    // Initialize IR receiver with appropriate feedback settings
+    IrReceiver.begin(_pins.irReceiverPin, DISABLE_LED_FEEDBACK);
 }
 
 bool SensorManager::isObstacleFront() {
-    long distance = readUltrasonic(_pins.frontTrigPin, _pins.frontEchoPin);  // Get the distance from the front sensor
+    long distance = readUltrasonic(_pins.frontTrigPin, _pins.frontEchoPin);
     Serial.print("Front Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    return distance < OBSTACLE_THRESHOLD_CM;  // Return true if obstacle is within threshold
+    return distance < OBSTACLE_THRESHOLD_CM;
 }
 
 bool SensorManager::isObstacleLeft() {
-    long distance = readUltrasonic(_pins.leftTrigPin, _pins.leftEchoPin);  // Get the distance from the left sensor
+    long distance = readUltrasonic(_pins.leftTrigPin, _pins.leftEchoPin);
     Serial.print("Left Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    return distance < OBSTACLE_THRESHOLD_CM;  // Return true if obstacle is within threshold
+    return distance < OBSTACLE_THRESHOLD_CM;
 }
 
 bool SensorManager::isObstacleRight() {
-    long distance = readUltrasonic(_pins.rightTrigPin, _pins.rightEchoPin);  // Get the distance from the right sensor
+    long distance = readUltrasonic(_pins.rightTrigPin, _pins.rightEchoPin);
     Serial.print("Right Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    return distance < OBSTACLE_THRESHOLD_CM;  // Return true if obstacle is within threshold
+    return distance < OBSTACLE_THRESHOLD_CM;
 }
 
-// Method to check for proximity to stairs using the IR sensor
 bool SensorManager::isNearStairs() {
-    int value = digitalRead(_pins.irPin);
-
-    if (value == -1) { // digitalRead normally doesn't return -1, so you can simulate this
-        Serial.println("Sensor not available. Returning true.");
-        return true; // Fail-safe: assume proximity to stairs
-    }
-
-    Serial.print("IR Read: ");
+    int value = digitalRead(_pins.irObstaclePin);
+    Serial.print("IR Obstacle Read: ");
     Serial.println(value);
-    Serial.println();
     return value == HIGH;
 }
 
-// Helper method to read ultrasonic sensor
+bool SensorManager::isSignalFromBase() {
+    if (IrReceiver.decode()) {
+        Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print raw data in HEX
+        IrReceiver.printIRResultShort(&Serial); // Print decoded data in a single line
+        IrReceiver.printIRSendUsage(&Serial); // Print the send command
+        IrReceiver.resume(); // Prepare for the next signal
+        return true;
+    }
+    return false;
+}
+
+// Helper method to read ultrasonic sensor distance
 long SensorManager::readUltrasonic(int trigPin, int echoPin) {
-    // Send a pulse to trigger the ultrasonic sensor
     digitalWrite(trigPin, LOW);
-    delayMicroseconds(2); // Ensure a clean LOW pulse
+    delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
-    delayMicroseconds(10); // Send a 10µs HIGH pulse
+    delayMicroseconds(10);
     digitalWrite(trigPin, LOW);
 
-    // Measure the duration of the echo pulse
-    long duration = pulseIn(echoPin, HIGH);
+    long duration = pulseIn(echoPin, HIGH, 30000); // Timeout after 30ms
+    if (duration == 0) return -1;
 
-    // Calculate the distance in cm
-    long distance = duration * 0.034 / 2;
-
-    return distance; // Return valid distance
+    long distance = duration * 0.034 / 2; // Convert duration to cm
+    return (distance < 2 || distance > 400) ? -1 : distance; // Valid range: 2-400 cm
 }

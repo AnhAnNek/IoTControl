@@ -5,174 +5,283 @@
 #include "Constants.h"
 #include "MotorController.h"
 #include "RobotController.h"
-#include <IRremote.h>
 
+// Sensor and motor pin configurations
 SensorPins sensorPins = {
-  FRONT_SENSOR_TRIG_PIN, 
-  FRONT_SENSOR_ECHO_PIN, 
-  LEFT_SENSOR_TRIG_PIN,  
-  LEFT_SENSOR_ECHO_PIN,  
-  RIGHT_SENSOR_TRIG_PIN, 
-  RIGHT_SENSOR_ECHO_PIN, 
-  IR_SENSOR_PIN
+    FRONT_SENSOR_TRIG_PIN, 
+    FRONT_SENSOR_ECHO_PIN, 
+    LEFT_SENSOR_TRIG_PIN,  
+    LEFT_SENSOR_ECHO_PIN,  
+    RIGHT_SENSOR_TRIG_PIN, 
+    RIGHT_SENSOR_ECHO_PIN, 
+    IR_OBSTACLE_PIN,
+    IR_RECEIVER_PIN
 };
 MotorPins motorPins = {
-  MOTOR_IN1_PIN, 
-  MOTOR_IN2_PIN, 
-  MOTOR_IN3_PIN, 
-  MOTOR_IN4_PIN, 
-  MOTOR_ENA_PIN, 
-  MOTOR_ENB_PIN,
-  SIDE_BRUSH_PIN,  
-  MAIN_BRUSH_PIN
+    MOTOR_IN1_PIN, 
+    MOTOR_IN2_PIN, 
+    MOTOR_IN3_PIN, 
+    MOTOR_IN4_PIN, 
+    MOTOR_ENA_PIN, 
+    MOTOR_ENB_PIN,
+    SIDE_BRUSH_PIN,  
+    MAIN_BRUSH_PIN
 };
 
+// Managers and controllers
 SensorManager sensorManager(sensorPins);
 MotorController motorController(motorPins);
 RobotController robotController(sensorManager, motorController);
 
-// const int PWM_PIN = 21;
-// const int recvPin = 22;
-
+// Timers and durations
 unsigned long previousMillis = 0;
-unsigned long rotationDuration = 1000; // Time for rotation in milliseconds
-unsigned long moveDuration = 2000;     // Time for moving forward in milliseconds
-unsigned long stopDuration = 1000;     // Pause time when stopping
+const int ROTATION_DURATION = 100; // Time for rotation in milliseconds
+const int MOVING_DURATION = 100;
+const int STOP_DURATION = 1000;     // Pause time when stopping
+const int BACK_DURATION = 1000;     // Pause time when stopping
 
-enum RobotState {
-    IDLE,
-    ROTATING_RIGHT,
-    ROTATING_LEFT,
-    MOVING_FORWARD,
-    STOPPING
-};
-
-RobotState currentState = IDLE;
-
+// Function prototypes
 void customMessageHandler(const char* message);
+void transitionToState(RobotController::State newState, unsigned long currentMillis);
+bool hasDurationElapsed(unsigned long currentMillis, unsigned long duration);
 
 void setup() {
-  // ledcSetup(0, 5000, 8); // Set up PWM channel 0, 5kHz, 8-bit resolution
-  // ledcAttachPin(PWM_PIN, 0); // Attach PWM to Trig/PWM pin
+    Serial.begin(115200);
 
-  Serial.begin(115200);
+    // Initialize Wi-Fi
+    WiFiManager& wifiManager = WiFiManager::getInstance();
+    wifiManager.initializeWiFi(WIFI_SSID, WIFI_PASSWORD);
 
-  // Initialize Wi-Fi
-  WiFiManager& wifiManager = WiFiManager::getInstance();
-  wifiManager.initializeWiFi(WIFI_SSID, WIFI_PASSWORD);
+    // Initialize WebSocketManager
+    WebSocketManager& webSocketManager = WebSocketManager::getInstance();
+    webSocketManager.initialize(WEBSOCKET_SERVER_HOST, WEBSOCKET_SERVER_PORT);
+    webSocketManager.setOnReceivedMessageCallback(customMessageHandler);
 
-  // Initialize WebSocketManager
-  WebSocketManager& webSocketManager = WebSocketManager::getInstance();
-  webSocketManager.initialize(WEBSOCKET_SERVER_HOST, WEBSOCKET_SERVER_PORT);
-  webSocketManager.setOnReceivedMessageCallback(customMessageHandler);
+    robotController.begin();
 
-  sensorManager.begin();
-  motorController.begin();
-
-  // IrReceiver.begin(recvPin, ENABLE_LED_FEEDBACK); // Initialize IR receiver
-  // Serial.println("IR Receiver is ready...");
-
-  robotController.setBrushSpeeds(255, 255);
-
-  Serial.println("Robot initialized!");
+    // robotController.setMovingSpeeds(DEFAULT_SPEED, DEFAULT_SPEED);
+    robotController.stop();
+    robotController.setBrushSpeeds(255, 255);
+    Serial.println("Robot initialized!");
 }
 
 void loop() {
-  // if (IrReceiver.decode()) {
-  //   char receivedChar = (char)IrReceiver.decodedIRData.decodedRawData; // Convert received data to char
-  //   receivedData += receivedChar; // Append character to the received string
-
-  //   // Check for end of transmission (e.g., newline or specific marker)
-  //   if (receivedChar == '}') { 
-  //     Serial.print("Received JSON: ");
-  //     Serial.println(receivedData);
-  //     receivedData = ""; // Clear the buffer for the next message
-  //   }
-
-  //   IrReceiver.resume(); // Prepare to receive the next signal
-  // }
+    WebSocketManager& webSocketManager = WebSocketManager::getInstance();
+    webSocketManager.handleMessages();
 
     unsigned long currentMillis = millis();
 
+    RobotController::State currentState = robotController.getCurrentState();
     switch (currentState) {
-        case IDLE:
-            if (sensorManager.isObstacleFront()) {
+        case RobotController::IDLE: {
+            // Store sensor readings in boolean variables
+            bool isFrontObstacle = sensorManager.isObstacleFront();
+            bool isLeftObstacle = sensorManager.isObstacleLeft();
+            bool isRightObstacle = sensorManager.isObstacleRight();
+            bool isNearStairs = sensorManager.isNearStairs();
+
+            if ((isFrontObstacle && isLeftObstacle && isRightObstacle) || (isLeftObstacle && isRightObstacle))
+            {
+                Serial.println("Obstacles detected on all sides! Moving backward...");
+                transitionToState(RobotController::MOVING_BACKWARD, currentMillis);
+            } 
+            else if (isFrontObstacle && isLeftObstacle) 
+            {
+                Serial.println("Obstacles detected on the front and left sides! Moving backward and turning right...");
+                transitionToState(RobotController::MOVING_BACKWARD_AND_ROTATING_RIGHT, currentMillis);
+            }
+            else if (isFrontObstacle && isRightObstacle) 
+            {
+                Serial.println("Obstacles detected on the front and right sides! Moving backward and turning left...");
+                transitionToState(RobotController::MOVING_BACKWARD_AND_ROTATING_LEFT, currentMillis);
+            }
+            else if (isFrontObstacle) 
+            {
                 Serial.println("Obstacle detected in front!");
                 robotController.stop();
-                currentState = ROTATING_RIGHT;
-                previousMillis = currentMillis;
-            } else if (sensorManager.isObstacleLeft()) {
+                transitionToState(RobotController::ROTATING_RIGHT, currentMillis);
+            } 
+            else if (isLeftObstacle) 
+            {
                 Serial.println("Obstacle detected on the left!");
                 robotController.stop();
-                currentState = ROTATING_RIGHT;
-                previousMillis = currentMillis;
-            } else if (sensorManager.isObstacleRight()) {
+                transitionToState(RobotController::ROTATING_RIGHT, currentMillis);
+            } 
+            else if (isRightObstacle) 
+            {
                 Serial.println("Obstacle detected on the right!");
                 robotController.stop();
-                currentState = ROTATING_LEFT;
-                previousMillis = currentMillis;
-            } else if (sensorManager.isNearStairs()) {
-                Serial.println("Ledge detected! Stopping...");
+                transitionToState(RobotController::ROTATING_LEFT, currentMillis);
+            } 
+            else if (isNearStairs) 
+            {
+                Serial.println("Stairs detected on the front!");
                 robotController.stop();
-                currentState = STOPPING;
-                previousMillis = currentMillis;
-            } else {
+                transitionToState(RobotController::MOVING_BACKWARD, currentMillis);
+            }
+            else 
+            {
                 Serial.println("Moving forward...");
-                robotController.moveForward(DEFAULT_SPEED);
-                currentState = MOVING_FORWARD;
-                previousMillis = currentMillis;
+                transitionToState(RobotController::MOVING_FORWARD, currentMillis);
             }
-            break;
+            break; // End of IDLE case
+        }
 
-        case ROTATING_RIGHT:
-            if (currentMillis - previousMillis >= rotationDuration) {
+
+        case RobotController::ROTATING_RIGHT:
+            if (hasDurationElapsed(currentMillis, ROTATION_DURATION)) {
                 Serial.println("Finished rotating right.");
-                currentState = IDLE;
+                currentState = RobotController::IDLE;
             } else {
-                robotController.rotateRight(ROTATION_SPEED);
+                robotController.rotateRight(DEFAULT_SPEED);
             }
             break;
 
-        case ROTATING_LEFT:
-            if (currentMillis - previousMillis >= rotationDuration) {
+        case RobotController::ROTATING_LEFT:
+            if (hasDurationElapsed(currentMillis, ROTATION_DURATION)) {
                 Serial.println("Finished rotating left.");
-                currentState = IDLE;
+                currentState = RobotController::IDLE;
             } else {
-                robotController.rotateLeft(ROTATION_SPEED);
+                robotController.rotateLeft(DEFAULT_SPEED);
             }
             break;
 
-        case MOVING_FORWARD:
-            if (currentMillis - previousMillis >= moveDuration) {
+        case RobotController::MOVING_FORWARD:
+            if (hasDurationElapsed(currentMillis, MOVING_DURATION)) {
                 Serial.println("Finished moving forward.");
-                robotController.stop();
-                currentState = IDLE;
+                currentState = RobotController::IDLE;
+            } else {
+                robotController.moveForward(DEFAULT_SPEED);
             }
             break;
 
-        case STOPPING:
-            if (currentMillis - previousMillis >= stopDuration) {
+        case RobotController::MOVING_BACKWARD:
+            if (hasDurationElapsed(currentMillis, BACK_DURATION)) {
+                Serial.println("Finished moving backward.");
+                currentState = RobotController::IDLE;
+            } else {
+                robotController.moveBackward(DEFAULT_SPEED);
+            }
+            break;
+
+        case RobotController::STOPPING:
+            if (hasDurationElapsed(currentMillis, STOP_DURATION)) {
                 Serial.println("Finished stopping.");
-                currentState = IDLE;
+                currentState = RobotController::IDLE;
+            }
+            break;
+        
+        case RobotController::MOVING_BACKWARD_AND_ROTATING_RIGHT:
+            if (hasDurationElapsed(currentMillis, BACK_DURATION)) {
+                Serial.println("Finished moving backward, now rotating right.");
+                transitionToState(RobotController::ROTATING_RIGHT, currentMillis); // Transition to rotating right after moving backward
+            } else {
+                robotController.moveBackward(DEFAULT_SPEED);
+            }
+            break;
+
+        case RobotController::MOVING_BACKWARD_AND_ROTATING_LEFT: 
+            if (hasDurationElapsed(currentMillis, BACK_DURATION)) {
+                Serial.println("Finished moving backward, now rotating left.");
+                transitionToState(RobotController::ROTATING_LEFT, currentMillis); // Transition to rotating right after moving backward
+            } else {
+                robotController.moveBackward(DEFAULT_SPEED);
             }
             break;
     }
 
-  // // Gradually increase speed
-  // for (int speed = 0; speed <= 255; speed += 5) {
-  //   ledcWrite(0, speed); // Set PWM duty cycle
-  //   delay(50);
-  // }
-
-  // delay(1000); // Run at full speed for 1 second
-
-  // // Gradually decrease speed
-  // for (int speed = 255; speed >= 0; speed -= 5) {
-  //   ledcWrite(0, speed); // Set PWM duty cycle
-  //   delay(50);
-  // }
+    if (sensorManager.isSignalFromBase()) {
+        Serial.println("Signal from base station detected!");
+    }
 }
 
-void customMessageHandler(const char* message) 
-{
+void customMessageHandler(const char* message) {
+    StaticJsonDocument<256> doc; // Adjust size based on expected JSON complexity
+
+    // Deserialize the JSON message
+    DeserializationError error = deserializeJson(doc, message);
+    if (error) {
+        Serial.print("JSON parse failed: ");
+        Serial.println(error.c_str());
+        return;
+    }
+
+    // Check for required fields
+    if (!doc.containsKey("type") || !doc.containsKey("device") || !doc.containsKey("command")) {
+        Serial.println("Missing required fields in JSON.");
+        return;
+    }
+
+    const char* type = doc["type"];       // e.g., "mode" or "ROBOT_CONTROL"
+    const char* device = doc["device"];   // e.g., "robot" or "sensor"
+    const char* command = doc["command"]; // e.g., "MOVE_FORWARD", "STOP"
+    int speed = doc.containsKey("speed") ? doc["speed"] : DEFAULT_SPEED; // Optional field
+
+    // Process "type" field
+    if (strcmp(type, "mode") == 0) {
+        if (strcmp(command, "AUTO") == 0) {
+            robotController.setAutoMode(true);
+            Serial.println("Auto mode enabled.");
+        } else if (strcmp(command, "MANUAL") == 0) {
+            robotController.setAutoMode(false);
+            Serial.println("Auto mode disabled. Manual control active.");
+        }
+    } 
+    else if (strcmp(type, "ROBOT_CONTROL") == 0 && strcmp(device, "robot") == 0) {
+        // Process robot commands if in manual mode
+        if (!robotController.isAutoMode()) {
+            if (strcmp(command, "MOVE_FORWARD") == 0) {
+                robotController.moveForward(speed);
+                Serial.print("Moving forward at speed: ");
+                Serial.println(speed);
+            } else if (strcmp(command, "MOVE_BACKWARD") == 0) {
+                robotController.moveBackward(speed);
+                Serial.print("Moving backward at speed: ");
+                Serial.println(speed);
+            } else if (strcmp(command, "ROTATE_LEFT") == 0) {
+                robotController.rotateLeft(speed);
+                Serial.print("Rotating left at speed: ");
+                Serial.println(speed);
+            } else if (strcmp(command, "ROTATE_RIGHT") == 0) {
+                robotController.rotateRight(speed);
+                Serial.print("Rotating right at speed: ");
+                Serial.println(speed);
+            } else if (strcmp(command, "STOP") == 0) {
+                robotController.stop();
+                Serial.println("Stopping the robot.");
+            } else if (strcmp(command, "STOP_SIDE_BRUSH") == 0) {
+                robotController.stopSideBrush();
+                Serial.println("Stopping side brush.");
+            } else if (strcmp(command, "STOP_MAIN_BRUSH") == 0) {
+                robotController.stopMainBrush();
+                Serial.println("Stopping main brush.");
+            } else if (strcmp(command, "START_SIDE_BRUSH") == 0) {
+                robotController.startSideBrush(DEFAULT_SPEED);
+                Serial.println("Starting side brush.");
+            } else if (strcmp(command, "START_MAIN_BRUSH") == 0) {
+                robotController.startMainBrush(DEFAULT_SPEED);
+                Serial.println("Starting side brush.");
+            } else {
+                Serial.print("Unknown command: ");
+                Serial.println(command);
+            }
+        } else {
+            Serial.println("Manual commands ignored in auto mode.");
+        }
+    } 
+    else {
+        Serial.print("Unknown type or device: ");
+        Serial.print(type);
+        Serial.print(", ");
+        Serial.println(device);
+    }
+}
+
+void transitionToState(RobotController::State newState, unsigned long currentMillis) {
+    robotController.setCurrentState(newState);
+    previousMillis = currentMillis;
+}
+
+bool hasDurationElapsed(unsigned long currentMillis, unsigned long duration) {
+    return (currentMillis - previousMillis >= duration);
 }

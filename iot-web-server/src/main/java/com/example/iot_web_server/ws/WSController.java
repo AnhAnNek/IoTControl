@@ -5,19 +5,18 @@ import com.example.iot_web_server.util.Utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import org.springframework.stereotype.Controller;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/ws")
+@Controller
 public class WSController extends TextWebSocketHandler {
 
     private static final Logger log = LogManager.getLogger(WSController.class);
@@ -96,4 +95,9 @@ public class WSController extends TextWebSocketHandler {
         }
     }
 
+    @RabbitListener(queues = "exampleQueue") // Replace with your actual queue name
+    public void receiveMessageFromRabbitMQ(String message) {
+        log.info("Received from RabbitMQ: " + message);
+        broadcastToAll(message); // Broadcast message to WebSocket clients
+    }
 }
