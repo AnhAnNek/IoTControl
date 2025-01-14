@@ -13,10 +13,10 @@ void MotorController::begin() {
     pinMode(_pins.in4, OUTPUT);
 
     // // Configure PWM channels for ena and enb
-    ledcSetup(0, 1000, 8); // Channel 0, 5 kHz, 8-bit resolution
+    ledcSetup(0, 15000, 8); // Channel 0, 5 kHz, 8-bit resolution
     ledcAttachPin(_pins.ena, 0);
 
-    ledcSetup(1, 1000, 8); // Channel 1, 5 kHz, 8-bit resolution
+    ledcSetup(1, 15000, 8); // Channel 1, 5 kHz, 8-bit resolution
     ledcAttachPin(_pins.enb, 1);
 
     // Configure PWM channels for side and main brushes

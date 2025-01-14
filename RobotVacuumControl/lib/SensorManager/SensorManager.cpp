@@ -22,27 +22,45 @@ void SensorManager::begin() {
 }
 
 bool SensorManager::isObstacleFront() {
+    long distance = getFrontObstacleDistance();
+    return distance < Constants::OBSTACLE_THRESHOLD_CM;
+}
+
+bool SensorManager::isObstacleLeft() {
+    long distance = getLeftObstacleDistance();
+    return distance < Constants::OBSTACLE_THRESHOLD_CM;
+}
+
+bool SensorManager::isObstacleRight() {
+    long distance = getRightObstacleDistance();
+    return distance < Constants::OBSTACLE_THRESHOLD_CM;
+}
+
+long SensorManager::getFrontObstacleDistance()
+{
     long distance = readUltrasonic(_pins.frontTrigPin, _pins.frontEchoPin);
     Serial.print("Front Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    return distance < OBSTACLE_THRESHOLD_CM;
+    return distance;
 }
 
-bool SensorManager::isObstacleLeft() {
+long SensorManager::getLeftObstacleDistance()
+{
     long distance = readUltrasonic(_pins.leftTrigPin, _pins.leftEchoPin);
     Serial.print("Left Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    return distance < OBSTACLE_THRESHOLD_CM;
+    return distance;
 }
 
-bool SensorManager::isObstacleRight() {
+long SensorManager::getRightObstacleDistance()
+{
     long distance = readUltrasonic(_pins.rightTrigPin, _pins.rightEchoPin);
     Serial.print("Right Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-    return distance < OBSTACLE_THRESHOLD_CM;
+    return distance;
 }
 
 bool SensorManager::isNearStairs() {
@@ -64,7 +82,7 @@ bool SensorManager::isSignalFromBase() {
 }
 
 // Helper method to read ultrasonic sensor distance
-long SensorManager::readUltrasonic(int trigPin, int echoPin) {
+long SensorManager::readUltrasonic(unsigned short trigPin, unsigned short echoPin) {
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
@@ -75,5 +93,5 @@ long SensorManager::readUltrasonic(int trigPin, int echoPin) {
     if (duration == 0) return -1;
 
     long distance = duration * 0.034 / 2; // Convert duration to cm
-    return (distance < 2 || distance > 400) ? -1 : distance; // Valid range: 2-400 cm
+    return (distance < 2 || distance > 400) ? 0 : distance; // Valid range: 2-400 cm
 }

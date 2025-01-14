@@ -2,18 +2,18 @@
 #define MOTORCONTROLLER_H
 
 #include <Arduino.h>
-#include "Constants.h"
+#include "Utils.h"
 
 // Define a structure to hold motor control pin configuration
 struct MotorPins {
-    int in1;
-    int in2;
-    int in3;
-    int in4;
-    int ena;
-    int enb;
-    int sideBrush;  // PWM pin for side brush
-    int mainBrush;  // PWM pin for main brush
+    unsigned short in1;
+    unsigned short in2;
+    unsigned short in3;
+    unsigned short in4;
+    unsigned short ena;
+    unsigned short enb;
+    unsigned short sideBrush;  // PWM pin for side brush
+    unsigned short mainBrush;  // PWM pin for main brush
 };
 
 class MotorController {
