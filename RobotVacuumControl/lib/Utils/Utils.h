@@ -39,6 +39,7 @@ namespace Constants {
 
     // Define constants for thresholds and simulated values
     const unsigned short OBSTACLE_THRESHOLD_CM = 5; // Threshold for detecting obstacles
+    const unsigned short SAFE_OBSTACLE_CM = 10; // Threshold for detecting obstacles
 
     // Other constants (add more as needed)
     constexpr const char* MESSAGE_TYPE_INFO = "INFO";
@@ -54,6 +55,13 @@ namespace Constants {
 namespace TimerUtils {
     inline bool hasDurationElapsed(unsigned long previousMillis, unsigned long currentMillis, unsigned int duration) {
         return (currentMillis - previousMillis >= duration);
+    }
+}
+
+namespace MethodUtils {
+    inline bool isObstacle(long distance)
+    {
+        return distance < Constants::OBSTACLE_THRESHOLD_CM;
     }
 }
 

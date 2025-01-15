@@ -24,11 +24,6 @@ public:
     // Method to initialize the sensors
     void begin();
 
-    // Methods to check for obstacles
-    bool isObstacleFront();
-    bool isObstacleLeft();
-    bool isObstacleRight();
-
     long getFrontObstacleDistance();
     long getLeftObstacleDistance();
     long getRightObstacleDistance();

@@ -1,13 +1,51 @@
 #include "RobotController.h"
+#include <Arduino.h>
 #include "Utils.h"
+#include "RobotAction.h"
 
 RobotController::RobotController(SensorManager& sensorManager, MotorController& motorController)
-    : sensorManager(sensorManager), motorController(motorController) {}
+    : sensorManager(sensorManager), motorController(motorController) 
+{
+  _actionQueue = xQueueCreate(5, sizeof(RobotAction*));
+}
 
 void RobotController::begin()
 {
   sensorManager.begin();
   motorController.begin();
+}
+
+// Add a RobotAction to the queue
+void RobotController::pushAction(RobotAction* action) {
+	if (xQueueSend(_actionQueue, &action, 0) != pdTRUE) {
+		Serial.println("Failed to push RobotAction to queue");
+	}
+}
+
+// Start executing actions
+void RobotController::executeAction() {
+	if (_currentAction == nullptr && uxQueueMessagesWaiting(_actionQueue) == 0) 
+	{
+		Serial.println("There are not any actions");
+		return;
+	}
+
+	if (_currentAction == nullptr && uxQueueMessagesWaiting(_actionQueue) > 0) {
+		// Get the next action from the queue
+		xQueueReceive(_actionQueue, &_currentAction, 0);
+		Serial.println("Starting new action");
+	}
+
+	if (_currentAction != nullptr) {
+		// Execute the current action
+		_currentAction->execute();
+
+		// Check if the current action is completed
+		if (_currentAction->isCompleted()) {
+			Serial.println("Current action completed");
+			_currentAction = nullptr;  // Reset current action after completion
+		}
+	}
 }
 
 void RobotController::moveForward(int speed) {
@@ -69,19 +107,40 @@ void RobotController::setMovingSpeeds(int leftSpeed, int rightSpeed)
 
 void RobotController::handleAutoMode(unsigned long currentMillis)
 {
+	if (_currentAction != nullptr || uxQueueMessagesWaiting(_actionQueue) > 0) {
+		return;
+	}
+
     const RobotController::State currentState = getCurrentState();
     switch (currentState) {
         case RobotController::IDLE: {
             // Store sensor readings in boolean variables
-            bool isFrontObstacle = sensorManager.isObstacleFront();
-            bool isLeftObstacle = sensorManager.isObstacleLeft();
-            bool isRightObstacle = sensorManager.isObstacleRight();
+            long frontDistance = sensorManager.getFrontObstacleDistance();
+            long leftDistance = sensorManager.getLeftObstacleDistance();
+            long rightDistance = sensorManager.getRightObstacleDistance();
+            bool isFrontObstacle = MethodUtils::isObstacle(frontDistance);
+            bool isLeftObstacle = MethodUtils::isObstacle(leftDistance);
+            bool isRightObstacle = MethodUtils::isObstacle(rightDistance);
             bool isNearStairs = sensorManager.isNearStairs();
 
             if ((isFrontObstacle && isLeftObstacle && isRightObstacle) || (isLeftObstacle && isRightObstacle))
             {
                 Serial.println("Obstacles detected on all sides! Moving backward...");
                 transitionToState(RobotController::MOVING_BACKWARD, currentMillis);
+
+                RobotAction* movingBackward = new RobotAction();
+                movingBackward->setAction([this]() {
+					this->moveBackward(Constants::DEFAULT_SPEED);
+                });
+                movingBackward->setCompletedCondition([this]() {
+					bool isFinished = isSafeObstacle();
+					if (!isFinished) return false;
+
+					Serial.println("Finished moving backward.");
+					return true;
+                });
+
+				pushAction(movingBackward);
             } 
             else if (isFrontObstacle && isLeftObstacle) 
             {
@@ -98,6 +157,33 @@ void RobotController::handleAutoMode(unsigned long currentMillis)
                 Serial.println("Obstacle detected in front!");
                 stop();
                 transitionToState(RobotController::ROTATING_RIGHT, currentMillis);
+
+                RobotAction* stop = new RobotAction();
+                stop->setAction([this]() {
+					this->stop();
+                });
+                stop->setCompletedCondition([this]() {
+					bool isFinished = TimerUtils::hasDurationElapsed(_previousMillis, currentMillis, Constants::STOP_DURATION);
+					if (!isFinished) return false;
+
+					Serial.println("Finished moving backward.");
+					return true;
+                });
+
+                RobotAction* rotateRight = new RobotAction();
+                rotateRight->setAction([this]() {
+					this->rotateRight(Constants::DEFAULT_SPEED);
+                });
+                rotateRight->setCompletedCondition([this]() {
+					bool isFinished = TimerUtils::hasDurationElapsed(_previousMillis, currentMillis, Constants::STOP_DURATION);
+					if (!isFinished) return false;
+
+					Serial.println("Finished moving backward.");
+					return true;
+                });
+
+				pushAction(stop);
+				pushAction(rotateRight);
             } 
             else if (isLeftObstacle) 
             {
@@ -210,4 +296,14 @@ void RobotController::setAutoMode(bool autoMode)
 void RobotController::transitionToState(RobotController::State newState, unsigned long currentMillis) {
     this->setCurrentState(newState);
     _previousMillis = currentMillis;
+}
+
+bool RobotController::isSafeObstacle()
+{
+	long frontDistance = this->sensorManager.getFrontObstacleDistance();
+	long leftDistance = this->sensorManager.getLeftObstacleDistance();
+	long rightDistance = this->sensorManager.getRightObstacleDistance();
+	return frontDistance > Constants::SAFE_OBSTACLE_CM 
+		&& leftDistance > Constants::SAFE_OBSTACLE_CM 
+		&& rightDistance > Constants::SAFE_OBSTACLE_CM;
 }

@@ -64,6 +64,8 @@ void loop() {
     unsigned long currentMillis = millis();
     robotController.handleAutoMode(currentMillis);
 
+    robotController.executeAction();
+
     if (sensorManager.isSignalFromBase()) {
         Serial.println("Signal from base station detected!");
     }
@@ -74,14 +76,16 @@ void customMessageHandler(const char* message) {
 
     // Deserialize the JSON message
     DeserializationError error = deserializeJson(doc, message);
-    if (error) {
+    if (error) 
+    {
         Serial.print("JSON parse failed: ");
         Serial.println(error.c_str());
         return;
     }
 
     // Check for required fields
-    if (!doc.containsKey("type") || !doc.containsKey("device") || !doc.containsKey("command")) {
+    if (!doc.containsKey("type") || !doc.containsKey("device") || !doc.containsKey("command")) 
+    {
         Serial.println("Missing required fields in JSON.");
         return;
     }
@@ -92,54 +96,81 @@ void customMessageHandler(const char* message) {
     int speed = doc.containsKey("speed") ? doc["speed"] : Constants::DEFAULT_SPEED; // Optional field
 
     // Process "type" field
-    if (strcmp(type, "mode") == 0) {
-        if (strcmp(command, "AUTO") == 0) {
+    if (strcmp(type, "mode") == 0) 
+    {
+        if (strcmp(command, "AUTO") == 0) 
+        {
             robotController.setAutoMode(true);
             Serial.println("Auto mode enabled.");
-        } else if (strcmp(command, "MANUAL") == 0) {
+        } 
+        else if (strcmp(command, "MANUAL") == 0) 
+        {
             robotController.setAutoMode(false);
             Serial.println("Auto mode disabled. Manual control active.");
         }
     } 
-    else if (strcmp(type, "ROBOT_CONTROL") == 0 && strcmp(device, "robot") == 0) {
+    else if (strcmp(type, "ROBOT_CONTROL") == 0 && strcmp(device, "robot") == 0) 
+    {
         // Process robot commands if in manual mode
-        if (!robotController.isAutoMode()) {
-            if (strcmp(command, "MOVE_FORWARD") == 0) {
+        if (!robotController.isAutoMode()) 
+        {
+            if (strcmp(command, "MOVE_FORWARD") == 0) 
+            {
                 robotController.moveForward(speed);
                 Serial.print("Moving forward at speed: ");
                 Serial.println(speed);
-            } else if (strcmp(command, "MOVE_BACKWARD") == 0) {
+            } 
+            else if (strcmp(command, "MOVE_BACKWARD") == 0) 
+            {
                 robotController.moveBackward(speed);
                 Serial.print("Moving backward at speed: ");
                 Serial.println(speed);
-            } else if (strcmp(command, "ROTATE_LEFT") == 0) {
+            } 
+            else if (strcmp(command, "ROTATE_LEFT") == 0) 
+            {
                 robotController.rotateLeft(speed);
                 Serial.print("Rotating left at speed: ");
                 Serial.println(speed);
-            } else if (strcmp(command, "ROTATE_RIGHT") == 0) {
+            } 
+            else if (strcmp(command, "ROTATE_RIGHT") == 0) 
+            {
                 robotController.rotateRight(speed);
                 Serial.print("Rotating right at speed: ");
                 Serial.println(speed);
-            } else if (strcmp(command, "STOP") == 0) {
+            } 
+            else if (strcmp(command, "STOP") == 0) 
+            {
                 robotController.stop();
                 Serial.println("Stopping the robot.");
-            } else if (strcmp(command, "STOP_SIDE_BRUSH") == 0) {
+            } 
+            else if (strcmp(command, "STOP_SIDE_BRUSH") == 0) 
+            {
                 robotController.stopSideBrush();
                 Serial.println("Stopping side brush.");
-            } else if (strcmp(command, "STOP_MAIN_BRUSH") == 0) {
+            } 
+            else if (strcmp(command, "STOP_MAIN_BRUSH") == 0) 
+            {
                 robotController.stopMainBrush();
                 Serial.println("Stopping main brush.");
-            } else if (strcmp(command, "START_SIDE_BRUSH") == 0) {
+            } 
+            else if (strcmp(command, "START_SIDE_BRUSH") == 0) 
+            {
                 robotController.startSideBrush(Constants::DEFAULT_SPEED);
                 Serial.println("Starting side brush.");
-            } else if (strcmp(command, "START_MAIN_BRUSH") == 0) {
+            } 
+            else if (strcmp(command, "START_MAIN_BRUSH") == 0) 
+            {
                 robotController.startMainBrush(Constants::DEFAULT_SPEED);
                 Serial.println("Starting side brush.");
-            } else {
+            } 
+            else 
+            {
                 Serial.print("Unknown command: ");
                 Serial.println(command);
             }
-        } else {
+        } 
+        else 
+        {
             Serial.println("Manual commands ignored in auto mode.");
         }
     } 

@@ -3,6 +3,7 @@
 
 #include "SensorManager.h"
 #include "MotorController.h"
+#include "RobotAction.h"
 
 class RobotController {
 public:
@@ -31,8 +32,18 @@ public:
         }
     }
 
-
     RobotController(SensorManager& sensorManager, MotorController& motorController);
+
+    ~RobotController() 
+    {
+        if (_actionQueue != nullptr) 
+        {
+            vQueueDelete(_actionQueue);
+        }
+    }
+
+    void pushAction(RobotAction* action);
+    void executeAction();
 
     void begin();
     void moveForward(int speed);
@@ -64,9 +75,13 @@ private:
     RobotController::State _currentState = IDLE;
     bool _autoMode = true;
 
+    xQueueHandle _actionQueue;
+    RobotAction* _currentAction = nullptr;
+
     unsigned long _previousMillis = 0;
 
     void transitionToState(RobotController::State newState, unsigned long currentMillis);
+    bool isSafeObstacle();
 };
 
 #endif // ROBOTCONTROLLER_H

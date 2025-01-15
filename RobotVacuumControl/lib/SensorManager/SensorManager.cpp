@@ -21,21 +21,6 @@ void SensorManager::begin() {
     IrReceiver.begin(_pins.irReceiverPin, DISABLE_LED_FEEDBACK);
 }
 
-bool SensorManager::isObstacleFront() {
-    long distance = getFrontObstacleDistance();
-    return distance < Constants::OBSTACLE_THRESHOLD_CM;
-}
-
-bool SensorManager::isObstacleLeft() {
-    long distance = getLeftObstacleDistance();
-    return distance < Constants::OBSTACLE_THRESHOLD_CM;
-}
-
-bool SensorManager::isObstacleRight() {
-    long distance = getRightObstacleDistance();
-    return distance < Constants::OBSTACLE_THRESHOLD_CM;
-}
-
 long SensorManager::getFrontObstacleDistance()
 {
     long distance = readUltrasonic(_pins.frontTrigPin, _pins.frontEchoPin);
