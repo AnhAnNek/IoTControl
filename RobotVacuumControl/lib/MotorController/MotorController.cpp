@@ -77,6 +77,10 @@ void MotorController::rotateRight()
 void MotorController::stop() 
 {
     setMovingSpeeds(0, 0);
+    digitalWrite(_pins.in1, LOW);
+    digitalWrite(_pins.in2, LOW);
+    digitalWrite(_pins.in3, LOW);
+    digitalWrite(_pins.in4, LOW);
 }
 
 // Helper method to set the left motor's speed and direction

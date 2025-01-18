@@ -5,6 +5,8 @@
 #include "Utils.h"
 #include "MotorController.h"
 #include "RobotController.h"
+#include "esp_system.h"
+#include "esp_partition.h"
 
 // Sensor and motor pin configurations
 SensorPins sensorPins = {
@@ -35,6 +37,7 @@ RobotController robotController(sensorManager, motorController);
 
 // Function prototypes
 void customMessageHandler(const char* message);
+void printSystemStatus();
 
 void setup() {
     Serial.begin(115200);
@@ -63,8 +66,6 @@ void loop() {
 
     unsigned long currentMillis = millis();
     robotController.handleAutoMode(currentMillis);
-
-    robotController.executeAction();
 
     if (sensorManager.isSignalFromBase()) {
         Serial.println("Signal from base station detected!");
@@ -180,4 +181,25 @@ void customMessageHandler(const char* message) {
         Serial.print(", ");
         Serial.println(device);
     }
+}
+
+void printSystemStatus() 
+{
+    // Get RAM (heap memory) usage
+    uint32_t freeHeap = esp_get_free_heap_size();
+    uint32_t totalHeap = heap_caps_get_total_size(MALLOC_CAP_8BIT);
+    uint32_t usedHeap = totalHeap - freeHeap;
+
+    // Get flash memory details
+    const esp_partition_t* runningPartition = esp_ota_get_running_partition();
+    uint32_t flashSize = 0;
+    esp_flash_get_size(NULL, &flashSize);
+
+    // Calculate flash usage based on OTA partitions and their data
+    uint32_t usedFlash = runningPartition->address + runningPartition->size;
+
+    // Print stats
+    Serial.println("System Status:");
+    Serial.printf("Used RAM: %u / %u bytes (%.2f%%)\n", usedHeap, totalHeap, 100.0f * (float)usedHeap / totalHeap);
+    Serial.printf("Used Flash (ROM): %u / %u bytes (%.2f%%)\n", usedFlash, flashSize, 100.0f * (float)usedFlash / flashSize);
 }

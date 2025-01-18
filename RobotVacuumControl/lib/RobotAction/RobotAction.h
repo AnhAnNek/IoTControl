@@ -2,35 +2,34 @@
 #define ROBOT_ACTION_H
 
 #include <functional>
+#include <memory>
 
 class RobotAction {
 public:
+    RobotAction(std::function<void()> action, std::function<bool()> condition);
     virtual ~RobotAction() = default;
 
     // Execute the action
-    virtual void execute() {
-        if (action) {
-            action();
-        }
-    }
+    virtual void execute();
+    
+    // Check if the action is completed
+    bool isCompleted();
 
-    // Set the action behavior
-    void setAction(std::function<void()> newAction) {
-        action = newAction;
-    }
+    // Builder class declaration
+    class Builder {
+    public:
+        Builder& setAction(std::function<void()> action);
+        Builder& setCompletedCondition(std::function<bool()> condition);
+        std::unique_ptr<RobotAction> build();
 
-    bool isCompleted() {
-        return completedCondition();
-    }
-
-    // Set the completed condition
-    void setCompletedCondition(std::function<bool()> condition) {
-        completedCondition = condition;
-    }
+    private:
+        std::function<void()> _action = []() {};
+        std::function<bool()> _completedCondition = []() { return false; };
+    };
 
 protected:
-    std::function<void()> action = []() {}; // The specific action to perform
-    std::function<bool()> completedCondition = []() { return false; }; // Condition to check if action is complete
+    std::function<void()> _action;
+    std::function<bool()> _completedCondition;
 };
 
 #endif // ROBOT_ACTION_H

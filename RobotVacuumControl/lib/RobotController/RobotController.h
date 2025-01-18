@@ -62,6 +62,11 @@ public:
     void startMainBrush(int speed);
 
     void handleAutoMode(unsigned long currentMillis);
+    
+    bool isSafeObstacle();
+    bool isFrontObstacleDistanceSafe();
+    bool isLeftObstacleDistanceSafe();
+    bool isRightObstacleDistanceSafe();
 
     RobotController::State getCurrentState() const;
     void setCurrentState(RobotController::State newState);
@@ -76,12 +81,20 @@ private:
     bool _autoMode = true;
 
     xQueueHandle _actionQueue;
-    RobotAction* _currentAction = nullptr;
+    std::shared_ptr<RobotAction> _currentAction = nullptr;
 
     unsigned long _previousMillis = 0;
 
     void transitionToState(RobotController::State newState, unsigned long currentMillis);
-    bool isSafeObstacle();
+
+    void handleNearStairs();
+    void handleAllSidesObstacle();
+    void handleFrontLeftObstacle();
+    void handleFrontRightObstacle();
+    void handleFrontObstacle();
+    void handleLeftObstacle();
+    void handleRightObstacle();
+    void handleNoObstacle(unsigned long currentMillis);
 };
 
 #endif // ROBOTCONTROLLER_H

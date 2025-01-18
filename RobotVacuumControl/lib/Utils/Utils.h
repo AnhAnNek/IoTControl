@@ -39,7 +39,7 @@ namespace Constants {
 
     // Define constants for thresholds and simulated values
     const unsigned short OBSTACLE_THRESHOLD_CM = 5; // Threshold for detecting obstacles
-    const unsigned short SAFE_OBSTACLE_CM = 10; // Threshold for detecting obstacles
+    const unsigned short SAFE_OBSTACLE_CM = 8; // Threshold for detecting obstacles
 
     // Other constants (add more as needed)
     constexpr const char* MESSAGE_TYPE_INFO = "INFO";
@@ -62,6 +62,11 @@ namespace MethodUtils {
     inline bool isObstacle(long distance)
     {
         return distance < Constants::OBSTACLE_THRESHOLD_CM;
+    }
+
+    inline bool isSafeDistance(long distance)
+    {
+        return distance > Constants::SAFE_OBSTACLE_CM;
     }
 }
 
