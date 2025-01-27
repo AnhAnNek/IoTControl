@@ -191,15 +191,15 @@ void printSystemStatus()
     uint32_t usedHeap = totalHeap - freeHeap;
 
     // Get flash memory details
-    const esp_partition_t* runningPartition = esp_ota_get_running_partition();
+    // const esp_partition_t* runningPartition = esp_ota_get_running_partition();
     uint32_t flashSize = 0;
     esp_flash_get_size(NULL, &flashSize);
 
     // Calculate flash usage based on OTA partitions and their data
-    uint32_t usedFlash = runningPartition->address + runningPartition->size;
+    // uint32_t usedFlash = runningPartition->address + runningPartition->size;
 
     // Print stats
     Serial.println("System Status:");
     Serial.printf("Used RAM: %u / %u bytes (%.2f%%)\n", usedHeap, totalHeap, 100.0f * (float)usedHeap / totalHeap);
-    Serial.printf("Used Flash (ROM): %u / %u bytes (%.2f%%)\n", usedFlash, flashSize, 100.0f * (float)usedFlash / flashSize);
+    // Serial.printf("Used Flash (ROM): %u / %u bytes (%.2f%%)\n", usedFlash, flashSize, 100.0f * (float)usedFlash / flashSize);
 }

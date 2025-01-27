@@ -6,7 +6,7 @@
 RobotController::RobotController(SensorManager& sensorManager, MotorController& motorController)
     : sensorManager(sensorManager), motorController(motorController) 
 {
-  _actionQueue = xQueueCreate(5, sizeof(RobotAction*));
+  _actionQueue = xQueueCreate(5, sizeof(std::unique_ptr<RobotAction>));
 }
 
 void RobotController::begin()
@@ -16,8 +16,9 @@ void RobotController::begin()
 }
 
 // Add a RobotAction to the queue
-void RobotController::pushAction(RobotAction* action) {
-	if (xQueueSend(_actionQueue, &action, 0) != pdTRUE) {
+void RobotController::pushAction(std::unique_ptr<RobotAction> action) {
+    std::unique_ptr<RobotAction> rawAction = std::move(action);
+	if (xQueueSend(_actionQueue, &rawAction, 0) != pdTRUE) {
 		Serial.println("Failed to push RobotAction to queue");
 	}
 }
@@ -40,7 +41,6 @@ void RobotController::executeAction() {
     if (_currentAction->isCompleted()) 
     {
         Serial.println("Current action completed");
-        delete _currentAction;
         _currentAction = nullptr;  // Reset current action after completion
     }
 }
@@ -148,76 +148,83 @@ void RobotController::handleNearStairs()
 {
     Serial.println("Stairs detected on the front!");
 
-    RobotAction* stop = createAction(
-        [this]() {
+    std::unique_ptr<RobotAction> stop = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::STOPPING);
             this->stop();
-        },
-        []() {
+        })
+        .setCompletedCondition([]() {
             Serial.println("Stopped.");
             return true;
-        }
-    );
+        })
+        .build();
 
-    RobotAction* moveBackward = createAction(
-        [this]() {
+    std::unique_ptr<RobotAction> moveBackward = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::MOVING_BACKWARD);
             this->moveBackward(Constants::DEFAULT_SPEED);
-        },
-        []() { return true; }
-    );
+        })
+        .setCompletedCondition([]() {
+            return true;
+        })
+        .build();
 
-    pushAction(stop);
-    pushAction(moveBackward);
+    pushAction(std::move(stop));
+    pushAction(std::move(moveBackward));
 }
 
 void RobotController::handleAllSidesObstacle()
 {
     Serial.println("Obstacles detected on all sides! Moving backward...");
 
-    RobotAction* movingBackward = createAction(
-        [this]() {
+    std::unique_ptr<RobotAction> movingBackward = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::MOVING_BACKWARD);
             this->moveBackward(Constants::DEFAULT_SPEED);
-        },
-        [this]() {
+        })
+        .setCompletedCondition([this]() {
             bool isFinished = isSafeObstacle();
             if (!isFinished) return false;
 
             Serial.println("Finished moving backward.");
             return true;
-        }
-    );
+        })
+        .build();
 
-    pushAction(movingBackward);
+    pushAction(std::move(movingBackward));
 }
 
 void RobotController::handleFrontLeftObstacle()
 {
     Serial.println("Obstacles detected on the front and left sides! Moving backward and turning right...");
 
-    RobotAction* moveBackward = createAction(
-        [this]() {
+    std::unique_ptr<RobotAction> moveBackward = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::MOVING_BACKWARD_AND_ROTATING_RIGHT);
             this->moveBackward(Constants::DEFAULT_SPEED);
-        },
-        [this]() { return this->isSafeObstacle(); }
-    );
+        })
+        .setCompletedCondition([this]() { return this->isSafeObstacle(); })
+        .build();
 
-    RobotAction* rotateRight = createAction(
-        [this]() { this->setCurrentState(RobotController::ROTATING_RIGHT); this->rotateRight(Constants::DEFAULT_SPEED); },
-        [this]() { return this->isSafeObstacle(); }
-    );
+    std::unique_ptr<RobotAction> rotateRight = RobotAction::Builder()
+        .setAction([this]() { 
+            this->setCurrentState(RobotController::ROTATING_RIGHT); 
+            this->rotateRight(Constants::DEFAULT_SPEED); 
+        })
+        .setCompletedCondition([this]() { 
+            return this->isSafeObstacle(); 
+        })
+        .build();
 
-    pushAction(moveBackward);
-    pushAction(rotateRight);
+    pushAction(std::move(moveBackward));
+    pushAction(std::move(rotateRight));
 }
 
 void RobotController::handleFrontRightObstacle()
 {
     Serial.println("Obstacles detected on the front and right sides! Moving backward and turning left...");
 
-    RobotAction* moveBackward = RobotAction::Builder()
+    std::unique_ptr<RobotAction> moveBackward = RobotAction::Builder()
         .setAction([this]() {
             this->setCurrentState(RobotController::MOVING_BACKWARD_AND_ROTATING_LEFT);
             this->moveBackward(Constants::DEFAULT_SPEED);
@@ -227,100 +234,105 @@ void RobotController::handleFrontRightObstacle()
         })
         .build();
 
-    RobotAction* rotateLeft = createAction(
-        [this]() { this->setCurrentState(RobotController::ROTATING_LEFT); this->rotateLeft(Constants::DEFAULT_SPEED); },
-        [this]() { return this->isSafeObstacle(); }
-    );
+    std::unique_ptr<RobotAction> rotateLeft = RobotAction::Builder()
+        .setAction([this]() { 
+            this->setCurrentState(RobotController::ROTATING_LEFT); 
+            this->rotateLeft(Constants::DEFAULT_SPEED); 
+        })
+        .setCompletedCondition([this]() { 
+            return this->isSafeObstacle(); 
+        })
+        .build();
 
-    pushAction(moveBackward);
-    pushAction(rotateLeft);
+    pushAction(std::move(moveBackward));
+    pushAction(std::move(rotateLeft));
 }
 
 void RobotController::handleFrontObstacle()
 {
     Serial.println("Obstacle detected in front!");
 
-    RobotAction* stop = createAction(
-        [this]() {
+    std::unique_ptr<RobotAction> stop = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::STOPPING);
             this->stop();
-        },
-        []() {
+        })
+        .setCompletedCondition([]() {
             Serial.println("Stopped.");
             return true;
-        }
-    );
+        })
+        .build();
 
-    RobotAction* rotateRight = createAction(
-        [this]() {
+    std::unique_ptr<RobotAction> rotateRight = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::ROTATING_RIGHT);
             this->rotateRight(Constants::DEFAULT_SPEED);
-        },
-        [this]() {
+        })
+        .setCompletedCondition([this]() {
             return TimerUtils::hasDurationElapsed(_previousMillis, millis(), Constants::STOP_DURATION);
-        }
-    );
+        })
+        .build();
 
-    pushAction(stop);
-    pushAction(rotateRight);
+    pushAction(std::move(stop));
+    pushAction(std::move(rotateRight));
 }
 
 void RobotController::handleLeftObstacle()
 {
     Serial.println("Obstacle detected on the left!");
 
-    RobotAction* stop = createAction(
-        [this]() {
+    std::unique_ptr<RobotAction> stop = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::STOPPING);
             this->stop();
-        },
-        []() {
+        })
+        .setCompletedCondition([]() {
             Serial.println("Stopped.");
             return true;
-        }
-    );
+        })
+        .build();
 
-    RobotAction* rotateRight = createAction(
-        [this]() {
+    std::unique_ptr<RobotAction> rotateRight = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::ROTATING_RIGHT);
             this->rotateRight(Constants::DEFAULT_SPEED);
-        },
-        [this]() {
+        })
+        .setCompletedCondition([this]() {
             return this->isSafeObstacle();
-        }
-    );
+        })
+        .build();
 
-    pushAction(stop);
-    pushAction(rotateRight);
+    pushAction(std::move(stop));
+    pushAction(std::move(rotateRight));
 }
 
 void RobotController::handleRightObstacle()
 {
     Serial.println("Obstacle detected on the right!");
 
-    RobotAction* stop = new RobotAction(
-        [this]() {
+    std::unique_ptr<RobotAction> stop = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::STOPPING);
             this->stop();
-        },
-        []() {
+        })
+        .setCompletedCondition([]() {
             Serial.println("Stopped.");
             return true;
-        }
-    );
+        })
+        .build();
 
-    RobotAction* rotateLeft = new RobotAction(
-        [this]() {
+    std::unique_ptr<RobotAction> rotateLeft = RobotAction::Builder()
+        .setAction([this]() {
             this->setCurrentState(RobotController::ROTATING_LEFT);
             this->rotateLeft(Constants::DEFAULT_SPEED);
-        },
-        [this]() {
+        })
+        .setCompletedCondition([this]() {
             return this->isRightObstacleDistanceSafe();
-        }
-    );
+        })
+        .build();
 
-    pushAction(stop);
-    pushAction(rotateLeft);
+    pushAction(std::move(stop));
+    pushAction(std::move(rotateLeft));
 }
 
 void RobotController::handleNoObstacle(unsigned long currentMillis)

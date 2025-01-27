@@ -42,7 +42,7 @@ public:
         }
     }
 
-    void pushAction(RobotAction* action);
+    void pushAction(std::unique_ptr<RobotAction> action);
     void executeAction();
 
     void begin();
@@ -81,7 +81,7 @@ private:
     bool _autoMode = true;
 
     xQueueHandle _actionQueue;
-    std::shared_ptr<RobotAction> _currentAction = nullptr;
+    std::unique_ptr<RobotAction> _currentAction = nullptr;
 
     unsigned long _previousMillis = 0;
 
