@@ -6,7 +6,7 @@
 RobotController::RobotController(SensorManager& sensorManager, MotorController& motorController)
     : sensorManager(sensorManager), motorController(motorController) 
 {
-  _actionQueue = xQueueCreate(5, sizeof(std::unique_ptr<RobotAction>));
+  _actionQueue = xQueueCreate(5, sizeof(RobotAction*));
 }
 
 void RobotController::begin()
@@ -17,17 +17,20 @@ void RobotController::begin()
 
 // Add a RobotAction to the queue
 void RobotController::pushAction(std::unique_ptr<RobotAction> action) {
-    std::unique_ptr<RobotAction> rawAction = std::move(action);
+    RobotAction* rawAction = action.release();
 	if (xQueueSend(_actionQueue, &rawAction, 0) != pdTRUE) {
 		Serial.println("Failed to push RobotAction to queue");
+        delete rawAction;
 	}
 }
 
 // Start executing actions
 void RobotController::executeAction() {
+    RobotAction* rawAction = nullptr;
 	if (!_currentAction && uxQueueMessagesWaiting(_actionQueue) > 0) 
     {
-		xQueueReceive(_actionQueue, &_currentAction, 0);
+		xQueueReceive(_actionQueue, &rawAction, 0);
+        _currentAction.reset(rawAction);
 	}
 
     if (!_currentAction)

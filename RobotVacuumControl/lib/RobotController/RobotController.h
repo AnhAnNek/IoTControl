@@ -34,12 +34,14 @@ public:
 
     RobotController(SensorManager& sensorManager, MotorController& motorController);
 
-    ~RobotController() 
+    ~RobotController()
     {
-        if (_actionQueue != nullptr) 
-        {
-            vQueueDelete(_actionQueue);
+        RobotAction* rawAction = nullptr;
+        while (uxQueueMessagesWaiting(_actionQueue) > 0) {
+            xQueueReceive(_actionQueue, &rawAction, 0);
+            delete rawAction; // Clean up any remaining actions
         }
+        vQueueDelete(_actionQueue); // Delete the queue
     }
 
     void pushAction(std::unique_ptr<RobotAction> action);
