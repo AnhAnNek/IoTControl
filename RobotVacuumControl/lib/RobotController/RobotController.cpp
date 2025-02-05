@@ -25,23 +25,24 @@ void RobotController::pushAction(std::unique_ptr<RobotAction> action) {
 
 // Start executing actions
 void RobotController::executeAction() {
-	if (_currentAction == nullptr && uxQueueMessagesWaiting(_actionQueue) == 0) 
-	{
-		Serial.println("There are not any actions");
-		return;
-	}
-
-	if (_currentAction == nullptr && uxQueueMessagesWaiting(_actionQueue) > 0) 
+	if (!_currentAction && uxQueueMessagesWaiting(_actionQueue) > 0) 
     {
 		xQueueReceive(_actionQueue, &_currentAction, 0);
-        _currentAction->execute();
-		Serial.println("Starting new action");
 	}
+
+    if (!_currentAction)
+    {
+		Serial.println("There are not any actions");
+        return;
+    }
+
+    Serial.println("Starting new action");
+    _currentAction->execute();
 
     if (_currentAction->isCompleted()) 
     {
         Serial.println("Current action completed");
-        _currentAction = nullptr;  // Reset current action after completion
+        _currentAction.reset();
     }
 }
 
@@ -104,11 +105,6 @@ void RobotController::setMovingSpeeds(int leftSpeed, int rightSpeed)
 
 void RobotController::handleAutoMode(unsigned long currentMillis)
 {
-	if (_currentAction != nullptr || uxQueueMessagesWaiting(_actionQueue) > 0) {
-        this->executeAction();
-		return;
-	}
-
     const RobotController::State currentState = getCurrentState();
     if (currentState != IDLE)
     {
@@ -338,8 +334,18 @@ void RobotController::handleRightObstacle()
 void RobotController::handleNoObstacle(unsigned long currentMillis)
 {
     Serial.println("Moving forward...");
-    transitionToState(RobotController::MOVING_FORWARD, currentMillis);
-    this->moveForward(Constants::DEFAULT_SPEED);
+
+    std::unique_ptr<RobotAction> stop = RobotAction::Builder()
+        .setAction([this, currentMillis]() {
+            transitionToState(RobotController::MOVING_FORWARD, currentMillis);
+            this->moveForward(Constants::DEFAULT_SPEED);
+        })
+        .setCompletedCondition([this]() {
+            return !this->isSafeObstacle();
+        })
+        .build();
+
+    pushAction(std::move(stop));
 }
 
 RobotController::State RobotController::getCurrentState() const {

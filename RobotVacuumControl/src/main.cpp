@@ -6,7 +6,6 @@
 #include "MotorController.h"
 #include "RobotController.h"
 #include "esp_system.h"
-#include "esp_partition.h"
 
 // Sensor and motor pin configurations
 SensorPins sensorPins = {
@@ -57,15 +56,19 @@ void setup() {
     robotController.setCurrentState(RobotController::IDLE);
     robotController.moveForward(Constants::DEFAULT_SPEED);
     robotController.setBrushSpeeds(255, 255);
+
     Serial.println("Robot initialized!");
 }
 
 void loop() {
+    // printSystemStatus();
+
     WebSocketManager& webSocketManager = WebSocketManager::getInstance();
     webSocketManager.handleMessages();
 
     unsigned long currentMillis = millis();
     robotController.handleAutoMode(currentMillis);
+    robotController.executeAction();
 
     if (sensorManager.isSignalFromBase()) {
         Serial.println("Signal from base station detected!");
@@ -192,8 +195,8 @@ void printSystemStatus()
 
     // Get flash memory details
     // const esp_partition_t* runningPartition = esp_ota_get_running_partition();
-    uint32_t flashSize = 0;
-    esp_flash_get_size(NULL, &flashSize);
+    // uint32_t flashSize = 0;
+    // esp_flash_get_size(NULL, &flashSize);
 
     // Calculate flash usage based on OTA partitions and their data
     // uint32_t usedFlash = runningPartition->address + runningPartition->size;
